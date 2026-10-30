@@ -182,8 +182,8 @@ Three formal documentation PDFs have been compiled and placed in the project roo
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/sruthirupini05/civicproof-gis.git
-cd civicproof-gis
+git clone https://github.com/sruthirupini05/civisproof-gis.git
+cd civisproof-gis
 ```
 
 ### 2. Configure Environment Variables
@@ -215,7 +215,7 @@ npm run dev
 ## 🌐 Public Deployment Guide
 
 ### Frontend Deployment (Vercel)
-1. Push repository to GitHub (`https://github.com/sruthirupini05/civicproof-gis`).
+1. Push repository to GitHub (`https://github.com/sruthirupini05/civisproof-gis`).
 2. Import project into [Vercel](https://vercel.com/).
 3. Set **Root Directory** to `client`.
 4. Add Environment Variable:
