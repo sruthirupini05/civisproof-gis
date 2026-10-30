@@ -20,13 +20,10 @@ export default function CityQRPage() {
   const navigate = useNavigate();
   const { currentLang } = useLanguageStore();
 
-  // Live link presets
-  const LIVE_URL = 'https://civicproof-pushkaram-2027.loca.lt';
-  const WIFI_URL = 'http://192.168.1.4:5173';
-  const CURRENT_URL = window.location.origin;
-
-  const [appUrl, setAppUrl] = useState(LIVE_URL);
-  const [posterFormat, setPosterFormat] = useState('a4');
+  // Allow custom production or network URL if needed, defaulting to current host origin
+  const defaultAppUrl = window.location.origin;
+  const [appUrl, setAppUrl] = useState(defaultAppUrl);
+  const [posterFormat, setPosterFormat] = useState('a4'); // 'a4' | 'placard'
 
   function handlePrint() {
     window.print();
@@ -82,62 +79,27 @@ export default function CityQRPage() {
         </div>
       </div>
 
-      {/* Target Live URL Preset Selector - Hidden during print */}
-      <div className="print:hidden bg-slate-100/90 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2 font-semibold text-slate-700">
-            <Smartphone size={16} className="text-[#1e3a5f]" />
-            <span>QR Code Destination (Scanned Link):</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setAppUrl(LIVE_URL)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
-                appUrl === LIVE_URL
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              🌐 Live Public Link
-            </button>
-            <button
-              onClick={() => setAppUrl(WIFI_URL)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
-                appUrl === WIFI_URL
-                  ? 'bg-[#1e3a5f] text-white shadow-xs'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              📶 Local Wi-Fi (192.168.1.4)
-            </button>
-            <button
-              onClick={() => setAppUrl(CURRENT_URL)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
-                appUrl === CURRENT_URL
-                  ? 'bg-slate-800 text-white shadow-xs'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              💻 Current Origin
-            </button>
-          </div>
-        </div>
-
+      {/* Target URL Settings - Hidden during print */}
+      <div className="print:hidden bg-slate-100/90 border border-slate-200 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
+          <Smartphone size={16} className="text-[#1e3a5f]" />
+          <span>QR Scans will direct users to:</span>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
             type="text"
             value={appUrl}
             onChange={(e) => setAppUrl(e.target.value)}
-            className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-mono flex-1 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono flex-1 sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
           />
           <a
             href={appUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#1e3a5f] hover:underline flex items-center gap-1 font-semibold text-xs shrink-0"
+            className="text-[#1e3a5f] hover:underline flex items-center gap-1 font-semibold text-xs"
           >
             <ExternalLink size={13} />
-            <span>Open Link</span>
+            <span>Test URL</span>
           </a>
         </div>
       </div>

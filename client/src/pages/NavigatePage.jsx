@@ -21,7 +21,10 @@ import {
   ChevronUp,
   Volume2,
   VolumeX,
+  Play,
+  Pause,
   X,
+  ChevronRight,
   CornerUpRight,
   CornerUpLeft,
   ArrowUp,
@@ -30,8 +33,6 @@ import {
   RotateCcw,
   Flag,
   LocateFixed,
-  Gauge,
-  CheckCircle2,
 } from 'lucide-react';
 import { calculateRoute, SUPPORTED_MODES } from '../services/routing.js';
 import { qrAPI, facilitiesAPI } from '../services/api.js';
@@ -40,20 +41,6 @@ import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import { useLanguageStore } from '../store/useStore.js';
 import { format, addMinutes } from 'date-fns';
-
-// Helper: Geodesic distance in meters between two [lat, lng] coordinates
-function getDistanceMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371e3;
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
 
 // Apple Maps-style start and end pins
 const startPin = L.divIcon({
@@ -91,7 +78,7 @@ function createAppleNavPuck(bearing = 0) {
   });
 }
 
-// Controller for map view in route overview mode
+// Controller for map view in route preview mode
 function RouteBoundsController({ routeCoords }) {
   const map = useMap();
   useEffect(() => {
@@ -134,18 +121,13 @@ export default function NavigatePage() {
   const [isOfflineRoute, setIsOfflineRoute] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
-  // Apple Maps Live Navigation States (Actual Maps Working Mode)
+  // Apple Maps Live Navigation States
   const [isNavigating, setIsNavigating] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [currentNavPos, setCurrentNavPos] = useState(null);
-  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(5.0);
-  const [metersToNextManeuver, setMetersToNextManeuver] = useState(120);
-  const [hasArrived, setHasArrived] = useState(false);
+  const [simulating, setSimulating] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
-
-  const watchIdRef = useRef(null);
-  const autoSimTimerRef = useRef(null);
-  const lastSpokenStepRef = useRef(-1);
+  const simulationTimerRef = useRef(null);
 
   // Load destination facility
   useEffect(() => {
@@ -174,7 +156,7 @@ export default function NavigatePage() {
     loadDestination();
   }, [facilityId]);
 
-  // Request initial GPS position
+  // Request GPS position on load
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -226,7 +208,7 @@ export default function NavigatePage() {
         setRoutes(calculated);
         setSelectedRouteIndex(0);
 
-        // Cache route for offline recall
+        // Cache route for offline use
         if (calculated[0]) {
           await cacheRoute({
             id: routeCacheKey,
@@ -256,7 +238,7 @@ export default function NavigatePage() {
   const activeRoute = routes[selectedRouteIndex];
   const polylineCoords = activeRoute?.geometry?.coordinates?.map((c) => [c[1], c[0]]) || [];
 
-  // Voice guidance
+  // Speech guidance
   function speakInstruction(text) {
     if (!voiceEnabled || !window.speechSynthesis) return;
     try {
@@ -271,148 +253,90 @@ export default function NavigatePage() {
     }
   }
 
-  // =========================================================
-  // ACTUAL MAPS AUTOMATIC WORKING ENGINE
-  // =========================================================
+  // Start Apple Maps Navigation
   function handleStartNavigation() {
     setIsNavigating(true);
-    setHasArrived(false);
     setActiveStepIndex(0);
-    lastSpokenStepRef.current = -1;
-
     const startCoord = polylineCoords[0] || startPoint;
     setCurrentNavPos(startCoord);
 
-    // Initial voice instruction
+    // Initial voice prompt
     const firstStep = activeRoute?.steps?.[0];
     if (firstStep) {
-      const text = getStepInstruction(firstStep);
-      speakInstruction(text);
-      lastSpokenStepRef.current = 0;
-    }
-
-    // Set speed based on travel mode
-    setCurrentSpeedKmh(travelMode === 'driving' ? 36.0 : travelMode === 'cycling' ? 16.0 : 4.8);
-
-    // 1. Real GPS Device Tracking (Automatic via Geolocation Watcher)
-    if (navigator.geolocation) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (position) => {
-          const userPos = [position.coords.latitude, position.coords.longitude];
-          setCurrentNavPos(userPos);
-          if (position.coords.speed && position.coords.speed > 0) {
-            setCurrentSpeedKmh(Math.round(position.coords.speed * 3.6 * 10) / 10);
-          }
-          checkWaypointArrival(userPos);
-        },
-        (err) => {
-          console.log('GPS watchPosition fallback to auto-navigation progression');
-        },
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
-      );
-    }
-
-    // 2. Automatic Real-Time Path Progress Engine (Like actual navigation)
-    // Progresses automatically along coordinates without needing any manual button clicks!
-    let coordIdx = 0;
-    const totalCoords = polylineCoords.length;
-
-    autoSimTimerRef.current = setInterval(() => {
-      coordIdx += 1;
-      if (coordIdx >= totalCoords) {
-        clearInterval(autoSimTimerRef.current);
-        setHasArrived(true);
-        setCurrentNavPos([destination.lat, destination.lng]);
-        setMetersToNextManeuver(0);
-        speakInstruction(t('navigation.arrived'));
-        return;
-      }
-
-      const nextCoord = polylineCoords[coordIdx];
-      setCurrentNavPos(nextCoord);
-
-      // Check distance to destination
-      const distToDest = getDistanceMeters(nextCoord[0], nextCoord[1], destination.lat, destination.lng);
-      if (distToDest < 20) {
-        clearInterval(autoSimTimerRef.current);
-        setHasArrived(true);
-        setMetersToNextManeuver(0);
-        speakInstruction(t('navigation.arrived'));
-        return;
-      }
-
-      // Automatically determine upcoming maneuver step and countdown meters
-      const steps = activeRoute?.steps || [];
-      const totalSteps = steps.length;
-      const progressFraction = coordIdx / totalCoords;
-      const estimatedStepIdx = Math.min(Math.floor(progressFraction * totalSteps), totalSteps - 1);
-
-      // Smooth distance countdown to next maneuver
-      const remainingDistanceTotal = (1 - progressFraction) * (activeRoute?.distanceM || 1000);
-      const nextStepDistance = Math.max(15, Math.round(remainingDistanceTotal / (totalSteps - estimatedStepIdx || 1)));
-      setMetersToNextManeuver(nextStepDistance);
-
-      if (estimatedStepIdx !== activeStepIndex) {
-        setActiveStepIndex(estimatedStepIdx);
-        if (lastSpokenStepRef.current !== estimatedStepIdx) {
-          const st = steps[estimatedStepIdx];
-          if (st) speakInstruction(getStepInstruction(st));
-          lastSpokenStepRef.current = estimatedStepIdx;
-        }
-      }
-    }, 1500);
-  }
-
-  function checkWaypointArrival(currentPos) {
-    if (!destination) return;
-    const distToDest = getDistanceMeters(currentPos[0], currentPos[1], destination.lat, destination.lng);
-    if (distToDest < 25) {
-      setHasArrived(true);
-      speakInstruction(t('navigation.arrived'));
+      speakInstruction(getStepInstruction(firstStep));
     }
   }
 
+  // End Navigation
   function handleEndNavigation() {
     setIsNavigating(false);
-    setHasArrived(false);
-    if (autoSimTimerRef.current) clearInterval(autoSimTimerRef.current);
-    if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setSimulating(false);
+    if (simulationTimerRef.current) {
+      clearInterval(simulationTimerRef.current);
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   }
 
-  // Cleanup timers on unmount
+  // Simulation runner (animates puck along polyline coordinates)
   useEffect(() => {
+    if (!simulating || !isNavigating || !polylineCoords.length) {
+      if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
+      return;
+    }
+
+    let coordIndex = 0;
+    simulationTimerRef.current = setInterval(() => {
+      coordIndex += 1;
+      if (coordIndex >= polylineCoords.length) {
+        clearInterval(simulationTimerRef.current);
+        setSimulating(false);
+        speakInstruction(t('navigation.arrived'));
+        return;
+      }
+      const nextCoord = polylineCoords[coordIndex];
+      setCurrentNavPos(nextCoord);
+
+      // Advance step if closer to next step coordinate
+      const totalSteps = activeRoute?.steps?.length || 1;
+      const stepProgression = Math.floor((coordIndex / polylineCoords.length) * totalSteps);
+      if (stepProgression !== activeStepIndex && stepProgression < totalSteps) {
+        setActiveStepIndex(stepProgression);
+        const st = activeRoute.steps[stepProgression];
+        if (st) speakInstruction(getStepInstruction(st));
+      }
+    }, 1200);
+
     return () => {
-      if (autoSimTimerRef.current) clearInterval(autoSimTimerRef.current);
-      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
     };
-  }, []);
+  }, [simulating, isNavigating, polylineCoords, activeStepIndex, activeRoute, t]);
 
   // Maneuver Icons & Localized Text Helpers
   function getManeuverIcon(maneuverType, modifier) {
     const mod = (modifier || '').toLowerCase();
     const type = (maneuverType || '').toLowerCase();
 
-    if (hasArrived || type === 'arrive') return <Flag className="text-emerald-400" size={28} />;
+    if (type === 'arrive') return <Flag className="text-emerald-400" size={26} />;
     if (mod.includes('left')) {
       return mod.includes('slight') ? (
-        <ArrowUpLeft className="text-white" size={28} />
+        <ArrowUpLeft className="text-white" size={26} />
       ) : (
-        <CornerUpLeft className="text-white" size={28} />
+        <CornerUpLeft className="text-white" size={26} />
       );
     }
     if (mod.includes('right')) {
       return mod.includes('slight') ? (
-        <ArrowUpRight className="text-white" size={28} />
+        <ArrowUpRight className="text-white" size={26} />
       ) : (
-        <CornerUpRight className="text-white" size={28} />
+        <CornerUpRight className="text-white" size={26} />
       );
     }
     if (mod.includes('u-turn') || mod.includes('uturn')) {
-      return <RotateCcw className="text-white" size={28} />;
+      return <RotateCcw className="text-white" size={26} />;
     }
-    return <ArrowUp className="text-white" size={28} />;
+    return <ArrowUp className="text-white" size={26} />;
   }
 
   function getStepInstruction(step) {
@@ -421,7 +345,7 @@ export default function NavigatePage() {
     const raw = (step.instruction || '').toLowerCase();
     const street = step.name || '';
 
-    if (hasArrived || step.maneuver === 'arrive') {
+    if (step.maneuver === 'arrive') {
       return lang === 'te'
         ? `గమ్యస్థానానికి చేరుకున్నారు (${getFacilityName()})`
         : lang === 'hi'
@@ -482,56 +406,38 @@ export default function NavigatePage() {
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] relative overflow-hidden bg-slate-900 select-none">
       {/* =========================================================
-          APPLE MAPS TOP TURN-BY-TURN HUD (AUTOMATIC NAVIGATION)
+          APPLE MAPS TOP TURN-BY-TURN HUD (DURING LIVE NAVIGATION)
           ========================================================= */}
-      {isNavigating && (
+      {isNavigating && currentStep && (
         <div className="absolute top-3 left-3 right-3 sm:left-6 sm:max-w-md sm:right-auto z-30 bg-[#1c1c1e]/95 backdrop-blur-xl text-white rounded-3xl p-4 shadow-2xl border border-white/10 space-y-2 animate-in fade-in slide-in-from-top-4 duration-200">
-          {hasArrived ? (
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="text-emerald-400" size={28} />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                  DESTINATION REACHED
-                </div>
-                <h2 className="text-base font-extrabold text-white leading-tight">
-                  {t('navigation.arrived')}
-                </h2>
-              </div>
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+              {getManeuverIcon(currentStep.maneuver, currentStep.instruction)}
             </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0 shadow-inner">
-                  {getManeuverIcon(currentStep?.maneuver, currentStep?.instruction)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-emerald-400 tracking-wide uppercase">
-                    {t('navigation.inDistance', { dist: `${metersToNextManeuver} m` })}
-                  </div>
-                  <h2 className="text-base font-extrabold text-white leading-tight truncate">
-                    {getStepInstruction(currentStep)}
-                  </h2>
-                </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-emerald-400 tracking-wide uppercase">
+                {t('navigation.inDistance', { dist: currentStep.distanceLabel || '100 m' })}
               </div>
+              <h2 className="text-base font-extrabold text-white leading-tight truncate">
+                {getStepInstruction(currentStep)}
+              </h2>
+            </div>
+          </div>
 
-              {/* Sub-preview for next maneuver */}
-              {nextStep && (
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
-                  <span className="font-medium truncate mr-2">
-                    {t('navigation.then')}: {getStepInstruction(nextStep)}
-                  </span>
-                  <span className="font-mono text-white/50 shrink-0">{nextStep.distanceLabel}</span>
-                </div>
-              )}
-            </>
+          {/* Sub-preview for next maneuver */}
+          {nextStep && (
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
+              <span className="font-medium">
+                {t('navigation.then')}: {getStepInstruction(nextStep)}
+              </span>
+              <span className="font-mono text-white/50">{nextStep.distanceLabel}</span>
+            </div>
           )}
         </div>
       )}
 
       {/* =========================================================
-          PRE-NAVIGATION TOP HEADER (ROUTE SELECTION OVERVIEW)
+          PRE-NAVIGATION TOP HEADER (OVERVIEW MODE)
           ========================================================= */}
       {!isNavigating && (
         <div className="bg-white border-b border-slate-200 shadow-xs p-3 z-10 shrink-0">
@@ -543,7 +449,7 @@ export default function NavigatePage() {
               <ArrowLeft size={16} />
               <span>{t('nav.back')}</span>
             </button>
-            <span className="text-xs font-bold text-slate-800 truncate max-w-xs">
+            <span className="text-xs font-bold text-slate-800">
               {t('navigation.title')}: {getFacilityName()}
             </span>
           </div>
@@ -639,7 +545,7 @@ export default function NavigatePage() {
             </Popup>
           </Marker>
 
-          {/* Route Polyline */}
+          {/* Route Polyline (Apple blue/emerald) */}
           {polylineCoords.length > 0 && (
             <Polyline
               positions={polylineCoords}
@@ -654,7 +560,7 @@ export default function NavigatePage() {
           )}
         </MapContainer>
 
-        {/* Floating Quick Action Buttons on Map during Live Navigation */}
+        {/* Floating Quick Action Buttons on Map */}
         {isNavigating && (
           <div className="absolute right-4 top-24 sm:top-6 z-20 flex flex-col gap-2.5">
             {/* Audio Toggle */}
@@ -670,7 +576,7 @@ export default function NavigatePage() {
               {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-rose-400" />}
             </button>
 
-            {/* Recenter Camera Button */}
+            {/* Recenter Button */}
             <button
               onClick={() => {
                 if (currentNavPos) setCurrentNavPos([...currentNavPos]);
@@ -679,6 +585,19 @@ export default function NavigatePage() {
               className="w-11 h-11 bg-[#1c1c1e]/90 text-white rounded-2xl shadow-lg border border-white/20 flex items-center justify-center transition active:scale-95"
             >
               <LocateFixed size={18} />
+            </button>
+
+            {/* Simulation Run / Pause Toggle */}
+            <button
+              onClick={() => setSimulating(!simulating)}
+              title={simulating ? t('navigation.stopSimulation') : t('navigation.simulate')}
+              className={`w-11 h-11 rounded-2xl shadow-lg border flex items-center justify-center transition active:scale-95 ${
+                simulating
+                  ? 'bg-amber-500 text-white border-amber-400 animate-pulse'
+                  : 'bg-[#1c1c1e]/90 text-white border-white/20'
+              }`}
+            >
+              {simulating ? <Pause size={18} /> : <Play size={18} className="ml-0.5 text-emerald-400" />}
             </button>
           </div>
         )}
@@ -695,10 +614,10 @@ export default function NavigatePage() {
       </div>
 
       {/* =========================================================
-          APPLE MAPS BOTTOM FLOATING BAR (NO PREV/NEXT STEP BUTTONS)
+          APPLE MAPS BOTTOM FLOATING CARD
           ========================================================= */}
       {isNavigating ? (
-        /* LIVE NAVIGATION STATUS HUD (EXACTLY LIKE APPLE MAPS) */
+        /* ACTIVE NAVIGATION BOTTOM HUD (MATCHING APPLE MAPS) */
         <div className="bg-[#1c1c1e] text-white p-4 z-20 border-t border-white/10 shadow-2xl shrink-0">
           <div className="max-w-xl mx-auto flex items-center justify-between">
             {/* Left: Big ETA, Time, Distance */}
@@ -718,15 +637,34 @@ export default function NavigatePage() {
               </div>
             </div>
 
-            {/* Center: Live Real-Time Speed & Mode Indicator */}
-            <div className="hidden sm:flex flex-col items-center justify-center px-4 py-1.5 bg-white/5 border border-white/10 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
-                <Gauge size={14} className="text-emerald-400" />
-                <span>{currentSpeedKmh} km/h</span>
-              </div>
-              <span className="text-[10px] text-white/50 uppercase tracking-wider font-semibold">
-                {t(`navigation.${travelMode}`)}
-              </span>
+            {/* Center: Step Navigation Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (activeStepIndex > 0) {
+                    const prevIdx = activeStepIndex - 1;
+                    setActiveStepIndex(prevIdx);
+                    speakInstruction(getStepInstruction(activeRoute.steps[prevIdx]));
+                  }
+                }}
+                disabled={activeStepIndex === 0}
+                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold disabled:opacity-30 transition"
+              >
+                ◀ {t('navigation.prevStep')}
+              </button>
+              <button
+                onClick={() => {
+                  if (activeStepIndex < (activeRoute?.steps?.length || 1) - 1) {
+                    const nextIdx = activeStepIndex + 1;
+                    setActiveStepIndex(nextIdx);
+                    speakInstruction(getStepInstruction(activeRoute.steps[nextIdx]));
+                  }
+                }}
+                disabled={activeStepIndex >= (activeRoute?.steps?.length || 1) - 1}
+                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold disabled:opacity-30 transition"
+              >
+                {t('navigation.nextStep')} ▶
+              </button>
             </div>
 
             {/* Right: Iconic Apple Maps Red "End" (X) Button */}
@@ -740,7 +678,7 @@ export default function NavigatePage() {
           </div>
         </div>
       ) : (
-        /* PRE-NAVIGATION OVERVIEW CARD (WITH PROMINENT GREEN START BUTTON) */
+        /* PRE-NAVIGATION BOTTOM DRAWER (WITH PROMINENT GREEN START BUTTON) */
         <div className="bg-white border-t border-slate-200 shadow-xl p-4 max-h-72 overflow-y-auto z-10 space-y-3">
           <div className="max-w-2xl mx-auto space-y-3">
             {calculating ? (
@@ -788,7 +726,7 @@ export default function NavigatePage() {
                   {/* PROMINENT APPLE MAPS GREEN START BUTTON */}
                   <button
                     onClick={handleStartNavigation}
-                    className="bg-[#34c759] hover:bg-[#2fb34f] active:scale-95 text-white px-8 py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md shadow-emerald-500/25 shrink-0"
+                    className="bg-[#34c759] hover:bg-[#2fb34f] active:scale-95 text-white px-7 py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md shadow-emerald-500/25 shrink-0"
                   >
                     <Navigation size={18} className="fill-white" />
                     <span className="tracking-wide uppercase">{t('navigation.start')}</span>

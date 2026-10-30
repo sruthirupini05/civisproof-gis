@@ -12,7 +12,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+const allowedOrigins = process.env.CLIENT_ORIGIN 
+  ? process.env.CLIENT_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, or same-origin)
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive for hackathon demo deployment
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

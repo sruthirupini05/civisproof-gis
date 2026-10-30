@@ -17,6 +17,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { facilitiesAPI, qrAPI } from '../services/api.js';
 import { getCachedFacility, cacheFacility } from '../services/db.js';
+import fallbackFacilities from '../data/fallbackFacilities.json';
 import StatusBadge from '../components/UI/StatusBadge.jsx';
 import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
@@ -65,7 +66,10 @@ export default function FacilityPage() {
 
       // Offline or network error: attempt IndexedDB resolution
       try {
-        const cached = await getCachedFacility(token);
+        let cached = await getCachedFacility(token);
+        if (!cached) {
+          cached = fallbackFacilities.find((f) => f.qr_token === token || f.id === token);
+        }
         if (cached) {
           setFacility(cached);
           setIsOfflineRecord(true);

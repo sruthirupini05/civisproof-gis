@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { facilitiesAPI } from '../services/api.js';
 import { cacheAllFacilities, getCachedFacilities } from '../services/db.js';
+import fallbackFacilities from '../data/fallbackFacilities.json';
 import StatusBadge from '../components/UI/StatusBadge.jsx';
 import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import { useMapStore, useLanguageStore } from '../store/useStore.js';
@@ -114,10 +115,21 @@ export default function MapPage() {
       try {
         let data = [];
         if (navigator.onLine) {
-          data = await facilitiesAPI.list({});
-          await cacheAllFacilities(data);
-        } else {
+          try {
+            data = await facilitiesAPI.list({});
+            if (data && data.length > 0) {
+              await cacheAllFacilities(data);
+            }
+          } catch (netErr) {
+            console.warn('Network API fetch failed, falling back to cache:', netErr);
+          }
+        }
+        if (!data || data.length === 0) {
           data = await getCachedFacilities();
+        }
+        if (!data || data.length === 0) {
+          data = fallbackFacilities;
+          await cacheAllFacilities(fallbackFacilities);
         }
         setFacilities(data);
 
@@ -132,9 +144,9 @@ export default function MapPage() {
           if (found) setSelectedFacility(found);
         }
       } catch (e) {
-        console.warn('Failed to load facilities, loading from IndexedDB:', e);
+        console.warn('Failed to load facilities, loading from IndexedDB / Fallback:', e);
         const cached = await getCachedFacilities();
-        setFacilities(cached);
+        setFacilities(cached && cached.length > 0 ? cached : fallbackFacilities);
       }
     }
     loadData();
