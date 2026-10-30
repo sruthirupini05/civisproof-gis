@@ -339,6 +339,61 @@ export default function NavigatePage() {
     return <ArrowUp className="text-white" size={26} />;
   }
 
+  function getStepHeadline(step) {
+    if (!step) return '';
+    const lang = (currentLang || i18n.language || 'te').slice(0, 2);
+    const raw = (step.instruction || '').toLowerCase();
+    const dist = step.distanceLabel || '100 m';
+
+    if (step.maneuver === 'arrive') {
+      return lang === 'te'
+        ? `గమ్యస్థానానికి చేరుకున్నారు`
+        : lang === 'hi'
+        ? `गंतव्य पर पहुंच रहे हैं`
+        : `Arriving at destination`;
+    }
+
+    const isTurn = raw.includes('turn') || raw.includes('left') || raw.includes('right') || raw.includes('uturn') || raw.includes('fork');
+
+    if (isTurn) {
+      return t('navigation.inDistance', { dist });
+    }
+
+    return t('navigation.continueFor', { dist });
+  }
+
+  function getStepSubtitle(step) {
+    if (!step) return '';
+    const lang = (currentLang || i18n.language || 'te').slice(0, 2);
+    const raw = (step.instruction || '').toLowerCase();
+    const street = step.name || '';
+
+    if (step.maneuver === 'arrive') {
+      return getFacilityName();
+    }
+
+    if (raw.includes('right')) {
+      return lang === 'te'
+        ? `${street ? street + ' పై ' : ''}కుడివైపు తిరగండి`
+        : lang === 'hi'
+        ? `${street ? street + ' पर ' : ''}दाएं मुड़ें`
+        : `Turn right ${street ? 'onto ' + street : ''}`;
+    }
+    if (raw.includes('left')) {
+      return lang === 'te'
+        ? `${street ? street + ' పై ' : ''}ఎడమవైపు తిరగండి`
+        : lang === 'hi'
+        ? `${street ? street + ' पर ' : ''}बाएं मुड़ें`
+        : `Turn left ${street ? 'onto ' + street : ''}`;
+    }
+
+    if (street) {
+      return street;
+    }
+
+    return lang === 'te' ? 'నేరుగా ముందుకు వెళ్ళండి' : lang === 'hi' ? 'सीधे आगे बढ़ें' : 'Continue on current road';
+  }
+
   function getStepInstruction(step) {
     if (!step) return '';
     const lang = (currentLang || i18n.language || 'te').slice(0, 2);
@@ -406,33 +461,39 @@ export default function NavigatePage() {
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] relative overflow-hidden bg-slate-900 select-none">
       {/* =========================================================
-          APPLE MAPS TOP TURN-BY-TURN HUD (DURING LIVE NAVIGATION)
+          APPLE MAPS TOP POPPING MANEUVER CARD (POPS DOWN FROM TOP)
           ========================================================= */}
       {isNavigating && currentStep && (
-        <div className="absolute top-3 left-3 right-3 sm:left-6 sm:max-w-md sm:right-auto z-30 bg-[#1c1c1e]/95 backdrop-blur-xl text-white rounded-3xl p-4 shadow-2xl border border-white/10 space-y-2 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-              {getManeuverIcon(currentStep.maneuver, currentStep.instruction)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-emerald-400 tracking-wide uppercase">
-                {t('navigation.inDistance', { dist: currentStep.distanceLabel || '100 m' })}
+        <div
+          key={activeStepIndex}
+          className="absolute top-4 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md sm:w-full z-30 transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-6"
+        >
+          <div className="bg-[#1c1c1e]/95 backdrop-blur-2xl text-white rounded-3xl p-4 shadow-2xl border border-white/15 space-y-2.5">
+            <div className="flex items-center gap-3.5">
+              {/* Apple Maps Vibrant Green Square Icon */}
+              <div className="w-13 h-13 rounded-2xl bg-[#34c759] flex items-center justify-center text-white shadow-lg shadow-emerald-500/25 shrink-0">
+                {getManeuverIcon(currentStep.maneuver, currentStep.instruction)}
               </div>
-              <h2 className="text-base font-extrabold text-white leading-tight truncate">
-                {getStepInstruction(currentStep)}
-              </h2>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-black text-white leading-tight tracking-tight truncate">
+                  {getStepHeadline(currentStep)}
+                </h2>
+                <p className="text-xs font-semibold text-emerald-400 mt-0.5 truncate">
+                  {getStepSubtitle(currentStep)}
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Sub-preview for next maneuver */}
-          {nextStep && (
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
-              <span className="font-medium">
-                {t('navigation.then')}: {getStepInstruction(nextStep)}
-              </span>
-              <span className="font-mono text-white/50">{nextStep.distanceLabel}</span>
-            </div>
-          )}
+            {/* Sub-preview for next maneuver */}
+            {nextStep && (
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
+                <span className="font-medium truncate mr-2">
+                  {t('navigation.then')}: {getStepSubtitle(nextStep)}
+                </span>
+                <span className="font-mono text-white/50 shrink-0">{nextStep.distanceLabel}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -637,33 +698,30 @@ export default function NavigatePage() {
               </div>
             </div>
 
-            {/* Center: Step Navigation Buttons */}
-            <div className="flex items-center gap-2">
+            {/* Center: Apple Maps Audio & Simulation Quick Controls */}
+            <div className="flex items-center gap-2.5">
               <button
-                onClick={() => {
-                  if (activeStepIndex > 0) {
-                    const prevIdx = activeStepIndex - 1;
-                    setActiveStepIndex(prevIdx);
-                    speakInstruction(getStepInstruction(activeRoute.steps[prevIdx]));
-                  }
-                }}
-                disabled={activeStepIndex === 0}
-                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold disabled:opacity-30 transition"
+                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition flex items-center justify-center text-white/90 active:scale-95"
+                title={voiceEnabled ? 'Mute voice' : 'Unmute voice'}
               >
-                ◀ {t('navigation.prevStep')}
+                {voiceEnabled ? (
+                  <Volume2 size={18} className="text-emerald-400" />
+                ) : (
+                  <VolumeX size={18} className="text-rose-400" />
+                )}
               </button>
               <button
-                onClick={() => {
-                  if (activeStepIndex < (activeRoute?.steps?.length || 1) - 1) {
-                    const nextIdx = activeStepIndex + 1;
-                    setActiveStepIndex(nextIdx);
-                    speakInstruction(getStepInstruction(activeRoute.steps[nextIdx]));
-                  }
-                }}
-                disabled={activeStepIndex >= (activeRoute?.steps?.length || 1) - 1}
-                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold disabled:opacity-30 transition"
+                onClick={() => setSimulating(!simulating)}
+                title={simulating ? t('navigation.stopSimulation') : t('navigation.simulate')}
+                className={`px-3.5 py-2 rounded-full text-xs font-bold border transition flex items-center gap-1.5 active:scale-95 ${
+                  simulating
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                    : 'bg-white/10 text-white/90 border-white/15 hover:bg-white/20'
+                }`}
               >
-                {t('navigation.nextStep')} ▶
+                {simulating ? <Pause size={13} /> : <Play size={13} className="text-emerald-400 fill-emerald-400" />}
+                <span>{simulating ? t('navigation.stopSimulation') : t('navigation.simulate')}</span>
               </button>
             </div>
 

@@ -120,7 +120,8 @@
     "step": "Step",
     "liveNavigation": "Navigation Active",
     "nextStep": "Next Step",
-    "prevStep": "Previous Step"
+    "prevStep": "Previous Step",
+    "continueFor": "Continue for {{dist}}"
   },
   "poster": {
     "title": "Godavari Pushkaram 2027",

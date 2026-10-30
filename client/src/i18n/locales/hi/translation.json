@@ -120,7 +120,8 @@
     "step": "चरण",
     "liveNavigation": "नेविगेशन सक्रिय है",
     "nextStep": "अगला चरण",
-    "prevStep": "पिछला चरण"
+    "prevStep": "पिछला चरण",
+    "continueFor": "{{dist}} सीधे आगे बढ़ें"
   },
   "poster": {
     "title": "गोदावरी पुष्करम 2027",

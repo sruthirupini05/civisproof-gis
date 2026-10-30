@@ -120,7 +120,8 @@
     "step": "దశ",
     "liveNavigation": "నావిగేషన్ ప్రారంభమైంది",
     "nextStep": "తదుపరి దశ",
-    "prevStep": "మునుపటి దశ"
+    "prevStep": "మునుపటి దశ",
+    "continueFor": "{{dist}} ముందుకు కొనసాగండి"
   },
   "poster": {
     "title": "గోదావరి పుష్కరాలు 2027",
