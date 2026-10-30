@@ -16,6 +16,7 @@ export default function QRAdminPage() {
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterCat, setFilterCat] = useState('all');
+  const [targetBaseUrl, setTargetBaseUrl] = useState(getPublicAppUrl());
 
   useEffect(() => {
     async function load() {
@@ -67,7 +68,18 @@ export default function QRAdminPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1 text-xs">
+            <span className="text-slate-500 font-semibold text-[11px]">Live Base URL:</span>
+            <input
+              type="text"
+              value={targetBaseUrl}
+              onChange={(e) => setTargetBaseUrl(e.target.value)}
+              className="bg-transparent font-mono text-xs w-56 focus:outline-none text-[#1e3a5f] font-medium"
+              placeholder="https://..."
+            />
+          </div>
+
           <select
             value={filterCat}
             onChange={(e) => setFilterCat(e.target.value)}
@@ -94,7 +106,7 @@ export default function QRAdminPage() {
       {/* Grid of Printable Labels */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-4">
         {filtered.map((f) => {
-          const qrUrl = `${getPublicAppUrl()}/facility/${f.qr_token}`;
+          const qrUrl = `${targetBaseUrl}/facility/${f.qr_token}`;
           return (
             <div
               key={f.id}
