@@ -22,6 +22,7 @@ import StatusBadge from '../components/UI/StatusBadge.jsx';
 import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { useAuthStore, useLanguageStore } from '../store/useStore.js';
+import { getPublicAppUrl } from '../services/config.js';
 import { format } from 'date-fns';
 
 const CATEGORY_COLORS = {
@@ -151,7 +152,7 @@ export default function FacilityPage() {
   }
 
   const categoryBannerBg = CATEGORY_COLORS[facility.category] || 'bg-slate-700';
-  const qrShareUrl = `${window.location.origin}/facility/${facility.qr_token}`;
+  const qrShareUrl = `${getPublicAppUrl()}/facility/${facility.qr_token}`;
 
   return (
     <div className="max-w-lg mx-auto px-4 py-5 space-y-4 pb-20">

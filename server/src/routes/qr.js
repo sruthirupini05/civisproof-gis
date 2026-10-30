@@ -4,7 +4,7 @@ import { getDB } from '../db.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
 const router = Router();
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+const BASE_URL = process.env.BASE_URL || 'https://civisproof-gis.vercel.app';
 
 // Public: resolve QR token to facility (non-sensitive fields only)
 router.get('/resolve/:token', (req, res) => {

@@ -7,6 +7,7 @@ import { facilitiesAPI } from '../services/api.js';
 import { getCachedFacilities } from '../services/db.js';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { useAuthStore } from '../store/useStore.js';
+import { getPublicAppUrl } from '../services/config.js';
 
 export default function QRAdminPage() {
   const { t } = useTranslation();
@@ -93,7 +94,7 @@ export default function QRAdminPage() {
       {/* Grid of Printable Labels */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-4">
         {filtered.map((f) => {
-          const qrUrl = `${window.location.origin}/facility/${f.qr_token}`;
+          const qrUrl = `${getPublicAppUrl()}/facility/${f.qr_token}`;
           return (
             <div
               key={f.id}

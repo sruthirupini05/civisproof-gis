@@ -50,12 +50,21 @@ export default function ScanPage() {
           try {
             scannerInstance.clear();
           } catch {}
-          let token = decodedText.trim();
-          if (token.includes('/facility/')) {
-            const parts = token.split('/facility/');
-            token = parts[parts.length - 1].split('?')[0];
+          let raw = decodedText.trim();
+          if (raw.includes('/facility/')) {
+            const parts = raw.split('/facility/');
+            const token = parts[parts.length - 1].split('?')[0];
+            navigate(`/facility/${token}`);
+          } else if (raw.startsWith('http://') || raw.startsWith('https://')) {
+            try {
+              const url = new URL(raw);
+              navigate(url.pathname || '/');
+            } catch {
+              navigate('/');
+            }
+          } else {
+            navigate(`/facility/${raw}`);
           }
-          navigate(`/facility/${token}`);
         },
         (scanError) => {
           // Continuous scanning errors are expected when no QR is in frame
@@ -78,10 +87,14 @@ export default function ScanPage() {
 
   function handleManualSubmit(e) {
     e.preventDefault();
-    const code = manualCode.trim();
+    let code = manualCode.trim();
     if (!code) {
       setError(t('errors.required'));
       return;
+    }
+    if (code.includes('/facility/')) {
+      const parts = code.split('/facility/');
+      code = parts[parts.length - 1].split('?')[0];
     }
     navigate(`/facility/${encodeURIComponent(code)}`);
   }

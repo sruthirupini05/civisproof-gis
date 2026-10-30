@@ -14,14 +14,15 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useLanguageStore } from '../store/useStore.js';
+import { getPublicAppUrl, LIVE_BASE_URL } from '../services/config.js';
 
 export default function CityQRPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { currentLang } = useLanguageStore();
 
-  // Allow custom production or network URL if needed, defaulting to current host origin
-  const defaultAppUrl = window.location.origin;
+  // Use live public link for real mobile phone scanning
+  const defaultAppUrl = getPublicAppUrl();
   const [appUrl, setAppUrl] = useState(defaultAppUrl);
   const [posterFormat, setPosterFormat] = useState('a4'); // 'a4' | 'placard'
 
