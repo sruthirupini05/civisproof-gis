@@ -1,12 +1,9 @@
 /**
  * NavigatePage — Godavari Pushkaralu 2027 Navigation
  *
- * Matches Screen 5 from UI design:
- *  - Top bar: ← Navigate
- *  - Clean map with blue route polyline and beacon
- *  - Floating bottom card with Destination, Distance, Duration & "Start Navigation →"
- *  - Live Apple Maps-style maneuver HUD & animated route simulation
- *  - Quick nearby amenities: Petrol (⛽), Food (🍽️), Medical (🏥), ATM (🏧), Toilets (🚻)
+ * Full multilingual support (Telugu, Hindi, English)
+ * 100% resilient coordinate resolution via bundled database & cache
+ * Live Apple Maps-style maneuver HUD & animated route simulation
  */
 
 import React, {
@@ -24,26 +21,22 @@ import {
   Crosshair,
   MapPin,
   Clock,
-  Layers,
-  Sparkles,
-  PhoneCall,
-  X,
   Play,
   Square,
-  ChevronRight,
-  ChevronLeft,
 } from 'lucide-react';
 import { qrAPI, facilitiesAPI } from '../services/api.js';
+import { getCachedFacility } from '../services/db.js';
 import { calculateRoute } from '../services/routing.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
+import { useLanguageStore } from '../store/useStore.js';
 
-/* ─── POI categories ─────────────────────────────────────────── */
+/* ─── POI Categories ─────────────────────────────────────────── */
 const POI_CATS = [
-  { key: 'fuel', label: 'Petrol', icon: '⛽', color: '#f97316', query: (r, lat, lng) => `node[amenity=fuel](around:${r},${lat},${lng});` },
-  { key: 'food', label: 'Food', icon: '🍽️', color: '#16a34a', query: (r, lat, lng) => `(node[amenity=restaurant](around:${r},${lat},${lng});node[amenity=fast_food](around:${r},${lat},${lng});node[amenity=cafe](around:${r},${lat},${lng}););` },
-  { key: 'medical', label: 'Medical', icon: '🏥', color: '#dc2626', query: (r, lat, lng) => `(node[amenity=hospital](around:${r},${lat},${lng});node[amenity=clinic](around:${r},${lat},${lng});node[amenity=pharmacy](around:${r},${lat},${lng}););` },
-  { key: 'atm', label: 'ATM', icon: '🏧', color: '#7c3aed', query: (r, lat, lng) => `(node[amenity=atm](around:${r},${lat},${lng});node[amenity=bank](around:${r},${lat},${lng}););` },
-  { key: 'toilet', label: 'Toilet', icon: '🚻', color: '#991b1b', query: (r, lat, lng) => `node[amenity=toilets](around:${r},${lat},${lng});` },
+  { key: 'fuel', label: 'Petrol', teLabel: 'పెట్రోల్', hiLabel: 'पेट्रोल', icon: '⛽', color: '#f97316', query: (r, lat, lng) => `node[amenity=fuel](around:${r},${lat},${lng});` },
+  { key: 'food', label: 'Food', teLabel: 'ఆహారం', hiLabel: 'भोजन', icon: '🍽️', color: '#16a34a', query: (r, lat, lng) => `(node[amenity=restaurant](around:${r},${lat},${lng});node[amenity=fast_food](around:${r},${lat},${lng});node[amenity=cafe](around:${r},${lat},${lng}););` },
+  { key: 'medical', label: 'Medical', teLabel: 'వైద్యం', hiLabel: 'चिकित्सा', icon: '🏥', color: '#dc2626', query: (r, lat, lng) => `(node[amenity=hospital](around:${r},${lat},${lng});node[amenity=clinic](around:${r},${lat},${lng});node[amenity=pharmacy](around:${r},${lat},${lng}););` },
+  { key: 'atm', label: 'ATM', teLabel: 'ATM', hiLabel: 'एटीएम', icon: '🏧', color: '#7c3aed', query: (r, lat, lng) => `(node[amenity=atm](around:${r},${lat},${lng});node[amenity=bank](around:${r},${lat},${lng}););` },
+  { key: 'toilet', label: 'Toilet', teLabel: 'మరుగుదొడ్డి', hiLabel: 'शौचालय', icon: '🚻', color: '#991b1b', query: (r, lat, lng) => `node[amenity=toilets](around:${r},${lat},${lng});` },
 ];
 
 async function fetchPOIs(lat, lng, catKey, radiusM = 2500) {
@@ -71,12 +64,16 @@ async function fetchPOIs(lat, lng, catKey, radiusM = 2500) {
 const DEFAULT_CENTRE = [16.9948, 81.7798];
 
 function getCoords(p) {
-  if (!p) return null;
+  if (!p || typeof p !== 'object') return null;
   const lat = Number(p.lat ?? p.latitude ?? p.location?.lat);
   const lng = Number(p.lng ?? p.lon ?? p.longitude ?? p.location?.lng);
   if (!isFinite(lat) || !isFinite(lng)) return null;
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
   return [lat, lng];
+}
+
+function isValidFacilityWithCoords(f) {
+  return f && typeof f === 'object' && getCoords(f) !== null;
 }
 
 function haversineM([la1, lo1], [la2, lo2]) {
@@ -91,10 +88,13 @@ function fmtDist(m) {
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-function fmtDur(s) {
+function fmtDur(s, isTe, isHi) {
   if (s == null) return '';
   const min = Math.round(s / 60);
-  return min < 60 ? `${min} min` : `${Math.floor(min / 60)}h ${min % 60}m`;
+  if (min < 60) return isTe ? `${min} నిమిషాలు` : isHi ? `${min} मिनट` : `${min} min`;
+  const hr = Math.floor(min / 60);
+  const rem = min % 60;
+  return isTe ? `${hr} గంట ${rem} నిమిషాలు` : isHi ? `${hr} घंटे ${rem} मिनट` : `${hr}h ${rem}m`;
 }
 
 function calcETA(durS) {
@@ -175,6 +175,10 @@ export default function NavigatePage() {
   const { facilityId, id } = useParams();
   const [sp] = useSearchParams();
   const navigate = useNavigate();
+  const { currentLang } = useLanguageStore();
+
+  const isTe = (currentLang || 'te').startsWith('te');
+  const isHi = (currentLang || 'te').startsWith('hi');
 
   const targetId = facilityId ?? id ?? sp.get('facilityId') ?? sp.get('id');
 
@@ -198,68 +202,72 @@ export default function NavigatePage() {
 
   const [activePoi, setActivePoi] = useState(null);
   const [pois, setPois] = useState([]);
-  const [poisLoading, setPoisLoading] = useState(false);
 
-  const destination = useMemo(() => getCoords(facility), [facility]);
-  const fitPoints = useMemo(() => {
-    const pts = [];
-    if (origin) pts.push(origin);
-    if (destination) pts.push(destination);
-    return pts;
-  }, [JSON.stringify(origin), JSON.stringify(destination)]);
-
-  const currentStep = route?.steps?.[stepIdx] ?? null;
-
-  // Remaining distance
-  const distRemaining = useMemo(() => {
-    if (!route) return null;
-    if (!simActive) return route.distM ?? null;
-    if (!route.points?.length) return null;
-    let d = 0;
-    for (let i = simPtIdx; i < route.points.length - 1; i++) {
-      d += haversineM(route.points[i], route.points[i + 1]);
-    }
-    return d;
-  }, [route, simActive, simPtIdx]);
-
-  const simSpeed = mode === 'driving' ? 14 : mode === 'cycling' ? 5 : 1.4;
-  const tickDist = simSpeed * 0.1;
-
-  // Load facility
+  // Robust Coordinate Resolution (Bundled DB + IndexedDB + API)
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setLoadErr('');
+
       if (!targetId) {
-        setLoadErr('No facility selected.');
+        setLoadErr(isTe ? 'సౌకర్యం ఎంపిక కాలేదు.' : isHi ? 'सुविधा का चयन नहीं किया गया।' : 'No facility selected.');
         setLoading(false);
         return;
       }
+
       let found = null;
-      try {
-        const r = await qrAPI.resolve(targetId);
-        found = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
-      } catch {}
+
+      // 1. Direct match in fallbackFacilities by qr_token or id
+      const direct = fallbackFacilities.find(
+        (f) => (f.qr_token === targetId || f.id === targetId) && isValidFacilityWithCoords(f)
+      );
+      if (direct) {
+        found = direct;
+      }
+
+      // 2. Check cached facilities in IndexedDB
       if (!found) {
         try {
-          const r = await facilitiesAPI.get(targetId);
-          found = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
+          const cached = await getCachedFacility(targetId);
+          if (isValidFacilityWithCoords(cached)) found = cached;
         } catch {}
       }
-      if (!found) {
-        found = fallbackFacilities.find((f) => f.qr_token === targetId || f.id === targetId) ?? null;
+
+      // 3. Online API check if network is available
+      if (!found && navigator.onLine) {
+        try {
+          const r = await qrAPI.resolve(targetId);
+          const candidate = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
+          if (isValidFacilityWithCoords(candidate)) found = candidate;
+        } catch {}
       }
+
+      if (!found && navigator.onLine) {
+        try {
+          const r = await facilitiesAPI.get(targetId);
+          const candidate = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
+          if (isValidFacilityWithCoords(candidate)) found = candidate;
+        } catch {}
+      }
+
       if (!alive) return;
+
       if (!found || !getCoords(found)) {
-        setLoadErr('Facility coordinates unavailable.');
+        setLoadErr(
+          isTe
+            ? 'ఈ సౌకర్యం మ్యాప్ వివరాలు అందుబాటులో లేవు.'
+            : isHi
+            ? 'इस सुविधा के निर्देशांक उपलब्ध नहीं हैं।'
+            : 'Facility coordinates unavailable.'
+        );
       } else {
         setFacility(found);
       }
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, [targetId]);
+  }, [targetId, isTe, isHi]);
 
   // Geolocation
   useEffect(() => {
@@ -273,6 +281,30 @@ export default function NavigatePage() {
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
+
+  const destination = useMemo(() => getCoords(facility), [facility]);
+  const fitPoints = useMemo(() => {
+    const pts = [];
+    if (origin) pts.push(origin);
+    if (destination) pts.push(destination);
+    return pts;
+  }, [JSON.stringify(origin), JSON.stringify(destination)]);
+
+  const currentStep = route?.steps?.[stepIdx] ?? null;
+
+  const distRemaining = useMemo(() => {
+    if (!route) return null;
+    if (!simActive) return route.distM ?? null;
+    if (!route.points?.length) return null;
+    let d = 0;
+    for (let i = simPtIdx; i < route.points.length - 1; i++) {
+      d += haversineM(route.points[i], route.points[i + 1]);
+    }
+    return d;
+  }, [route, simActive, simPtIdx]);
+
+  const simSpeed = mode === 'driving' ? 14 : mode === 'cycling' ? 5 : 1.4;
+  const tickDist = simSpeed * 0.1;
 
   const stopSim = useCallback(() => {
     if (simRef.current) clearInterval(simRef.current);
@@ -302,7 +334,7 @@ export default function NavigatePage() {
         distM: best.distanceM,
         durS: best.durationS,
         distLabel: best.distanceLabel ?? fmtDist(best.distanceM),
-        durLabel: best.durationLabel ?? fmtDur(best.durationS),
+        durLabel: best.durationLabel ?? fmtDur(best.durationS, isTe, isHi),
       });
     } catch {
       const distM = haversineM(origin, destination);
@@ -313,19 +345,19 @@ export default function NavigatePage() {
         distM,
         durS,
         distLabel: fmtDist(distM),
-        durLabel: fmtDur(durS),
+        durLabel: fmtDur(durS, isTe, isHi),
         isFallback: true,
       });
     } finally {
       setRouteLoading(false);
     }
-  }, [origin, destination, mode, stopSim]);
+  }, [origin, destination, mode, stopSim, isTe, isHi]);
 
   useEffect(() => {
     if (origin && destination) calcRoute();
   }, [calcRoute]);
 
-  // Simulation loop
+  // Simulation
   function startSim() {
     if (!route?.points?.length) return;
     setSimPtIdx(0);
@@ -371,13 +403,12 @@ export default function NavigatePage() {
     return () => { if (simRef.current) clearInterval(simRef.current); };
   }, [simActive, route, tickDist, simPtIdx]);
 
-  // Nearby POIs
+  // POI
   useEffect(() => {
     if (!activePoi || !destination) { setPois([]); return; }
-    setPoisLoading(true);
     fetchPOIs(destination[0], destination[1], activePoi, 2500)
       .then(setPois)
-      .finally(() => setPoisLoading(false));
+      .catch(() => setPois([]));
   }, [activePoi, JSON.stringify(destination)]);
 
   const nextStep = () => {
@@ -388,7 +419,7 @@ export default function NavigatePage() {
   const prevStep = () => { if (stepIdx > 0) setStepIdx((i) => i - 1); };
 
   const puck = simPuck ?? origin;
-  const fName = facility?.name ?? 'Facility';
+  const fName = isTe ? facility?.name_te || facility?.name : isHi ? facility?.name_hi || facility?.name : facility?.name || 'Facility';
   const etaStr = calcETA(route?.durS);
   const distRem = fmtDist(distRemaining);
 
@@ -407,7 +438,7 @@ export default function NavigatePage() {
           <p className="text-3xl mb-2">⚠️</p>
           <h2 className="text-base font-bold text-stone-900 mb-3">{loadErr || 'Facility coordinates missing.'}</h2>
           <button onClick={() => navigate(-1)} className="w-full py-2 bg-[#991b1b] text-white font-bold text-xs rounded-xl">
-            Go Back
+            {isTe ? 'వెనక్కి వెళ్ళండి' : isHi ? 'वापस जाएं' : 'Go Back'}
           </button>
         </div>
       </div>
@@ -416,7 +447,7 @@ export default function NavigatePage() {
 
   return (
     <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden bg-[#e5f2fb]">
-      {/* ── Top Header (Screen 5: ← Navigate) ── */}
+      {/* ── Top Header ── */}
       <div className="absolute top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-b border-amber-100 shadow-xs px-4 py-2.5 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
@@ -427,7 +458,7 @@ export default function NavigatePage() {
         </button>
 
         <h1 className="font-extrabold text-base text-stone-900 tracking-tight">
-          Navigate
+          {isTe ? 'నావిగేషన్' : isHi ? 'नेविगेशन' : 'Navigate'}
         </h1>
 
         <div className="flex items-center gap-1.5">
@@ -436,7 +467,7 @@ export default function NavigatePage() {
               onClick={() => { stopSim(); setNavActive(false); }}
               className="text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl border border-red-200 transition"
             >
-              Exit
+              {isTe ? 'నిష్క్రమించు' : isHi ? 'बाहर निकलें' : 'Exit'}
             </button>
           )}
         </div>
@@ -451,7 +482,7 @@ export default function NavigatePage() {
             </span>
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-sm truncate">
-                {currentStep?.instruction || `Head towards ${fName}`}
+                {currentStep?.instruction || `${fName} వైపు వెళ్ళండి`}
               </p>
               <p className="text-xs text-stone-400 mt-0.5">
                 {currentStep?.distanceLabel ? `In ${currentStep.distanceLabel}` : distRem}
@@ -465,7 +496,6 @@ export default function NavigatePage() {
             )}
           </div>
 
-          {/* Step buttons */}
           {route?.steps?.length > 0 && !simActive && (
             <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-stone-800">
               <button
@@ -487,7 +517,6 @@ export default function NavigatePage() {
             </div>
           )}
 
-          {/* Simulation Progress bar */}
           {simActive && route?.points?.length > 1 && (
             <div className="mt-2.5 pt-2 border-t border-stone-800">
               <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
@@ -497,8 +526,8 @@ export default function NavigatePage() {
                 />
               </div>
               <div className="flex justify-between text-[10px] text-stone-400 mt-1">
-                <span>Simulating navigation…</span>
-                <span>{distRem} left</span>
+                <span>{isTe ? 'సిమ్యులేట్ అవుతోంది…' : isHi ? 'सिमुलेशन जारी है…' : 'Simulating movement…'}</span>
+                <span>{distRem} {isTe ? 'మిగిలి ఉంది' : isHi ? 'शेष' : 'left'}</span>
               </div>
             </div>
           )}
@@ -522,19 +551,16 @@ export default function NavigatePage() {
           {!simActive && <FitBounds points={fitPoints} />}
           {simActive && simPuck && <PanTo point={simPuck} />}
 
-          {/* Current location beacon */}
           {puck && (
             <Marker position={puck} icon={navActive ? pulsePuckIcon : userBeaconIcon} />
           )}
 
-          {/* Destination Pin */}
           <Marker position={destination} icon={destPinIcon}>
             <Popup>
               <strong>{fName}</strong>
             </Popup>
           </Marker>
 
-          {/* Route Polylines */}
           {route?.points?.length >= 2 && (
             <>
               {simActive && simPtIdx > 0 && (
@@ -555,7 +581,6 @@ export default function NavigatePage() {
             </>
           )}
 
-          {/* POI Markers */}
           {pois.map((poi) => (
             <Marker key={poi.id} position={[poi.lat, poi.lng]} icon={poiPinIcon(poi.category)}>
               <Popup>
@@ -575,7 +600,7 @@ export default function NavigatePage() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-extrabold text-sm sm:text-base text-stone-900 truncate">
-              To {fName}
+              {isTe ? `గమ్యం: ${fName}` : isHi ? `गंतव्य: ${fName}` : `To ${fName}`}
             </h3>
             {facility?.address && (
               <p className="text-xs text-stone-500 truncate">{facility.address}</p>
@@ -583,7 +608,7 @@ export default function NavigatePage() {
           </div>
         </div>
 
-        {/* 2 Metrics: Distance & Duration (Matches Screen 5) */}
+        {/* 2 Metrics: Distance & Duration */}
         <div className="grid grid-cols-2 gap-2 bg-[#fefaf3] p-2.5 rounded-2xl border border-amber-100">
           <div className="flex items-center gap-2">
             <div className="text-stone-400">🚶</div>
@@ -591,7 +616,9 @@ export default function NavigatePage() {
               <div className="font-black text-sm text-stone-900">
                 {distRem || route?.distLabel || '~350 m'}
               </div>
-              <div className="text-[10px] text-stone-500 uppercase font-bold">Distance</div>
+              <div className="text-[10px] text-stone-500 uppercase font-bold">
+                {isTe ? 'దూరం' : isHi ? 'दूरी' : 'Distance'}
+              </div>
             </div>
           </div>
 
@@ -599,10 +626,12 @@ export default function NavigatePage() {
             <div className="text-stone-400">🕒</div>
             <div>
               <div className="font-black text-sm text-stone-900">
-                {route?.durLabel || '3 min'}
+                {route?.durLabel || (isTe ? '3 నిమిషాలు' : isHi ? '3 मिनट' : '3 min')}
               </div>
               <div className="text-[10px] text-stone-500 uppercase font-bold">
-                {mode === 'driving' ? 'Driving' : 'Walking'}
+                {mode === 'driving'
+                  ? (isTe ? 'డ్రైవింగ్' : isHi ? 'ड्राइविंग' : 'Driving')
+                  : (isTe ? 'నడక' : isHi ? 'पैदल' : 'Walking')}
               </div>
             </div>
           </div>
@@ -612,8 +641,8 @@ export default function NavigatePage() {
         <div className="flex items-center justify-between gap-1 pt-1">
           <div className="flex gap-1">
             {[
-              { id: 'walking', icon: '🚶', label: 'Walk' },
-              { id: 'driving', icon: '🚗', label: 'Drive' },
+              { id: 'walking', icon: '🚶', label: isTe ? 'నడక' : isHi ? 'पैदल' : 'Walk' },
+              { id: 'driving', icon: '🚗', label: isTe ? 'వాహనం' : isHi ? 'वाहन' : 'Drive' },
             ].map((m) => (
               <button
                 key={m.id}
@@ -630,13 +659,8 @@ export default function NavigatePage() {
             ))}
           </div>
 
-          {/* Quick nearby POI */}
           <div className="flex gap-1">
-            {[
-              { key: 'fuel', icon: '⛽' },
-              { key: 'food', icon: '🍽️' },
-              { key: 'toilet', icon: '🚻' },
-            ].map((p) => (
+            {POI_CATS.slice(0, 3).map((p) => (
               <button
                 key={p.key}
                 onClick={() => setActivePoi(activePoi === p.key ? null : p.key)}
@@ -645,7 +669,7 @@ export default function NavigatePage() {
                     ? 'bg-amber-400 text-stone-900 border-amber-500'
                     : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
                 }`}
-                title={`Find nearby ${p.key}`}
+                title={p.label}
               >
                 {p.icon}
               </button>
@@ -653,7 +677,7 @@ export default function NavigatePage() {
           </div>
         </div>
 
-        {/* Big Crimson Action Buttons (Matches Screen 5) */}
+        {/* Action Buttons */}
         {!navActive ? (
           <div className="grid grid-cols-3 gap-2 pt-1">
             <button
@@ -663,14 +687,14 @@ export default function NavigatePage() {
               }}
               className="col-span-2 py-3 px-4 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 active:scale-98 transition"
             >
-              <span>Start Navigation</span>
+              <span>{isTe ? 'నావిగేషన్ ప్రారంభించండి' : isHi ? 'नेविगेशन शुरू करें' : 'Start Navigation'}</span>
               <Navigation size={15} />
             </button>
             <button
               onClick={startSim}
               className="py-3 px-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#7f1d1d] font-black text-xs rounded-2xl flex items-center justify-center gap-1 shadow-md active:scale-98 transition"
             >
-              <span>Simulate</span>
+              <span>{isTe ? 'సిమ్యులేట్' : isHi ? 'सिमुलेट' : 'Simulate'}</span>
               <Play size={12} className="fill-[#7f1d1d]" />
             </button>
           </div>
@@ -682,7 +706,7 @@ export default function NavigatePage() {
             }}
             className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md active:scale-98 transition"
           >
-            <span>Stop Navigation</span>
+            <span>{isTe ? 'నావిగేషన్ ఆపివేయండి' : isHi ? 'नेविगेशन रोकें' : 'Stop Navigation'}</span>
             <Square size={13} className="fill-white" />
           </button>
         )}

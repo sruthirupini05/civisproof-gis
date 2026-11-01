@@ -4,91 +4,104 @@ import { useTranslation } from 'react-i18next';
 import {
   Search,
   MapPin,
-  Waves,
-  Droplets,
-  HeartPulse,
-  Compass,
-  Bus,
-  UtensilsCrossed,
-  Bed,
-  Car,
   PhoneCall,
   ShieldAlert,
+  HeartPulse,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
+import { useLanguageStore } from '../store/useStore.js';
 
 const CATEGORIES = [
   {
     id: 'toilet',
     name: 'Toilets',
     teName: 'మరుగుదొడ్లు',
+    hiName: 'शौचालय',
     icon: '🚻',
     desc: 'Public washrooms',
-    color: 'from-amber-50 to-orange-50 border-orange-200 text-orange-900',
+    teDesc: 'సార్వజనీన మరుగుదొడ్లు',
+    hiDesc: 'सार्वजनिक शौचालय',
   },
   {
     id: 'water',
     name: 'Drinking Water',
     teName: 'త్రాగునీరు',
+    hiName: 'पेयजल',
     icon: '💧',
     desc: 'RO water kiosks',
-    color: 'from-blue-50 to-cyan-50 border-blue-200 text-blue-900',
+    teDesc: 'RO శుద్ధి చేసిన తాగునీరు',
+    hiDesc: 'शुद्ध पेयजल केंद्र',
   },
   {
     id: 'medical',
     name: 'Medical Help',
     teName: 'వైద్య సహాయం',
+    hiName: 'चिकित्सा सहायता',
     icon: '➕',
     desc: 'First-aid & camps',
-    color: 'from-rose-50 to-red-50 border-rose-200 text-rose-900',
+    teDesc: 'ప్రథమ చికిత్స కేంద్రాలు',
+    hiDesc: 'प्राथमिक चिकित्सा शिविर',
   },
   {
     id: 'ghat',
     name: 'Ghats',
     teName: 'పుష్కర ఘాట్లు',
+    hiName: 'स्नान घाट',
     icon: '🌊',
     desc: 'Bathing ghats',
-    color: 'from-amber-50 to-yellow-50 border-amber-200 text-amber-900',
+    teDesc: 'స్నాన ఘాట్ల స్థానాలు',
+    hiDesc: 'मुख्य स्नान घाट',
   },
   {
     id: 'parking',
     name: 'Parking',
     teName: 'పార్కింగ్',
+    hiName: 'पार्किंग',
     icon: '🅿️',
     desc: 'Vehicle parking slots',
-    color: 'from-slate-50 to-stone-50 border-stone-200 text-stone-900',
+    teDesc: 'వాహన పార్కింగ్ ప్రాంతాలు',
+    hiDesc: 'वाहन पार्किंग क्षेत्र',
   },
   {
     id: 'transport',
     name: 'Bus & Transport',
     teName: 'రవాణా సౌకర్యాలు',
+    hiName: 'बस और परिवहन',
     icon: '🚌',
     desc: 'Shuttle & bus pickup',
-    color: 'from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900',
+    teDesc: 'ఉచిత బస్సు షటిల్',
+    hiDesc: 'शटल और बस सेवा',
   },
   {
     id: 'food',
     name: 'Food & Rest Areas',
-    teName: 'ఆహారం & విశ్రాంతి',
+    teName: 'అన్నదానం & ఆహారం',
+    hiName: 'भोजन और विश्राम',
     icon: '🍽️',
     desc: 'Annadanam & food points',
-    color: 'from-yellow-50 to-amber-50 border-yellow-200 text-yellow-900',
+    teDesc: 'ఉచిత అన్నదాన కేంద్రాలు',
+    hiDesc: 'अन्नदान व भोजन केंद्र',
   },
   {
     id: 'shelter',
     name: 'Accommodation',
-    teName: 'వసతి గృహాలు',
+    teName: 'విశ్రాంతి ఆశ్రయాలు',
+    hiName: 'आवास और विश्राम',
     icon: '🛏️',
     desc: 'Pilgrim rest shelters',
-    color: 'from-purple-50 to-pink-50 border-purple-200 text-purple-900',
+    teDesc: 'యాత్రికుల విశ్రాంతి గదులు',
+    hiDesc: 'तीर्थयात्री विश्राम स्थल',
   },
 ];
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
+  const { currentLang } = useLanguageStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
+  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -103,21 +116,28 @@ export default function HomePage() {
     <div className="min-h-full pb-16 bg-[#fffdf9]">
       {/* ── Sacred Welcome Hero Card (Screen 1 & 10) ── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white pt-6 pb-12 px-4 shadow-md">
-        {/* Decorative Sacred Background Elements */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-4xl mx-auto relative z-10 text-center">
           {/* Sacred Om Emblem */}
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 rounded-full shadow-lg text-[#881337] font-black text-2xl mb-3 border-2 border-amber-200 animate-in zoom-in duration-300">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 rounded-full shadow-lg text-[#881337] font-black text-2xl mb-3 border-2 border-amber-200">
             ॐ
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
-            Godavari Pushkaralu 2027
+            {isTe
+              ? 'గోదావరి పుష్కరాలు 2027'
+              : isHi
+              ? 'गोदावरी पुष्करालु 2027'
+              : 'Godavari Pushkaralu 2027'}
           </h1>
           <p className="text-amber-200/90 text-sm md:text-base max-w-xl mx-auto mb-6">
-            Find certified ghats, clean washrooms, free drinking water, medical camps and pilgrim shelters across Rajahmundry.
+            {isTe
+              ? 'రాజమండ్రిలో ధృవీకరించబడిన స్నాన ఘాట్లు, శుభ్రమైన మరుగుదొడ్లు, ఉచిత తాగునీరు మరియు వైద్య సహాయాన్ని సులభంగా కనుగొనండి.'
+              : isHi
+              ? 'राजमुंदरी में प्रमाणित स्नान घाट, स्वच्छ शौचालय, निःशुल्क पेयजल और चिकित्सा सहायता आसानी से खोजें।'
+              : 'Find certified ghats, clean washrooms, free drinking water, medical camps and pilgrim shelters across Rajahmundry.'}
           </p>
 
           {/* Quick CTA Buttons */}
@@ -126,7 +146,7 @@ export default function HomePage() {
               to="/map"
               className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-3.5 px-6 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#7f1d1d] font-extrabold rounded-2xl shadow-lg active:scale-95 transition"
             >
-              <span>Find Facilities</span>
+              <span>{isTe ? 'సౌకర్యాలను కనుగొనండి' : isHi ? 'सुविधाएं खोजें' : 'Find Facilities'}</span>
               <ArrowRight size={18} />
             </Link>
             <Link
@@ -134,12 +154,11 @@ export default function HomePage() {
               className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-3.5 px-6 bg-white/15 hover:bg-white/20 border border-white/25 text-white font-bold rounded-2xl active:scale-95 transition"
             >
               <MapPin size={18} className="text-amber-300" />
-              <span>Explore Nearby</span>
+              <span>{isTe ? 'సమీపంలో అన్వేషించండి' : isHi ? 'आस-पास देखें' : 'Explore Nearby'}</span>
             </Link>
           </div>
         </div>
 
-        {/* Decorative Wave Edge */}
         <div className="absolute bottom-0 left-0 right-0 h-4 bg-[#fffdf9] rounded-t-3xl" />
       </section>
 
@@ -149,10 +168,18 @@ export default function HomePage() {
         <div className="bg-white rounded-2xl p-4 shadow-lg shadow-amber-950/5 border border-amber-100 mb-6">
           <div className="text-center mb-3">
             <h2 className="text-base sm:text-lg font-extrabold text-[#881337]">
-              How can we help you?
+              {isTe
+                ? 'మేము మీకు ఎలా సహాయపడగలము?'
+                : isHi
+                ? 'हम आपकी क्या मदद कर सकते हैं?'
+                : 'How can we help you?'}
             </h2>
             <p className="text-xs text-stone-500">
-              Find essential facilities and ghats around you in Rajahmundry
+              {isTe
+                ? 'మీ చుట్టూ ఉన్న ముఖ్యమైన పుష్కర సౌకర్యాలను కనుగొనండి'
+                : isHi
+                ? 'अपने आस-पास आवश्यक पुष्कर सुविधाओं को खोजें'
+                : 'Find essential facilities around you'}
             </p>
           </div>
 
@@ -162,14 +189,20 @@ export default function HomePage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search facilities (e.g. Panchavati Ghat, Water, Toilet)..."
+              placeholder={
+                isTe
+                  ? 'సౌకర్యాల కోసం వెతకండి (ఉదా: పంచవటి ఘాట్, నీరు, మరుగుదొడ్డి)...'
+                  : isHi
+                  ? 'सुविधाएं खोजें (उदा: पंचवटी घाट, पानी, शौचालय)...'
+                  : 'Search facilities (e.g. Panchavati Ghat, Water, Toilet)...'
+              }
               className="w-full pl-10 pr-24 py-3 bg-[#fefaf3] rounded-xl border border-amber-200/80 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
             />
             <button
               type="submit"
               className="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-[#991b1b] hover:bg-[#881337] text-white text-xs font-bold rounded-lg transition"
             >
-              Search
+              {isTe ? 'వెతకండి' : isHi ? 'खोजें' : 'Search'}
             </button>
           </form>
         </div>
@@ -178,13 +211,13 @@ export default function HomePage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3 px-1">
             <h3 className="text-sm font-extrabold text-stone-800 tracking-tight flex items-center gap-1.5">
-              <span>Essential Facilities</span>
+              <span>{isTe ? 'ముఖ్యమైన సౌకర్యాలు' : isHi ? 'आवश्यक सुविधाएं' : 'Essential Facilities'}</span>
               <span className="text-[10px] bg-amber-100 text-[#991b1b] font-bold px-1.5 py-0.5 rounded-full">
-                8 Categories
+                {isTe ? '8 వర్గాలు' : isHi ? '8 श्रेणियां' : '8 Categories'}
               </span>
             </h3>
             <Link to="/map" className="text-xs font-bold text-[#991b1b] hover:underline">
-              View All on Map →
+              {isTe ? 'మ్యాప్‌లో అన్నీ చూడండి →' : isHi ? 'नक्शे पर सभी देखें →' : 'View All on Map →'}
             </Link>
           </div>
 
@@ -193,16 +226,16 @@ export default function HomePage() {
               <button
                 key={cat.id}
                 onClick={() => navigate(`/map?category=${cat.id}`)}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-amber-100 hover:border-amber-300 shadow-xs hover:shadow-md transition text-center group active:scale-98`}
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-amber-100 hover:border-amber-300 shadow-xs hover:shadow-md transition text-center group active:scale-98"
               >
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition shadow-2xs border border-amber-200/50">
                   {cat.icon}
                 </div>
                 <div className="font-extrabold text-sm text-stone-900 group-hover:text-[#991b1b] transition leading-tight">
-                  {cat.name}
+                  {isTe ? cat.teName : isHi ? cat.hiName : cat.name}
                 </div>
                 <div className="text-[11px] text-stone-400 mt-0.5">
-                  {cat.desc}
+                  {isTe ? cat.teDesc : isHi ? cat.hiDesc : cat.desc}
                 </div>
               </button>
             ))}
@@ -216,17 +249,21 @@ export default function HomePage() {
               🆘
             </div>
             <div>
-              <div className="font-extrabold text-sm text-red-950">Emergency Pushkaram Assistance</div>
-              <div className="text-[11px] text-red-800/80">Available 24×7 for pilgrim safety and first-aid</div>
+              <div className="font-extrabold text-sm text-red-950">
+                {isTe ? 'అత్యవసర పుష్కర సహాయం' : isHi ? 'आपातकालीन पुष्कर सहायता' : 'Emergency Pushkaram Assistance'}
+              </div>
+              <div className="text-[11px] text-red-800/80">
+                {isTe ? 'యాత్రికుల రక్షణ కోసం 24×7 అందుబాటులో ఉంది' : isHi ? 'तीर्थयात्रियों की सुरक्षा के लिए 24×7 उपलब्ध' : 'Available 24×7 for pilgrim safety'}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { label: 'Emergency', num: '108', icon: PhoneCall, color: 'text-red-700 bg-white border-red-200' },
-              { label: 'Police Help', num: '100', icon: ShieldAlert, color: 'text-blue-700 bg-white border-blue-200' },
-              { label: 'Ambulance', num: '108', icon: HeartPulse, color: 'text-emerald-700 bg-white border-emerald-200' },
-              { label: 'Helpline', num: '1800-425-4567', icon: PhoneCall, color: 'text-amber-800 bg-white border-amber-200' },
+              { label: isTe ? 'అత్యవసరం' : isHi ? 'आपातकाल' : 'Emergency', num: '108', icon: PhoneCall, color: 'text-red-700 bg-white border-red-200' },
+              { label: isTe ? 'పోలీస్' : isHi ? 'पुलिस' : 'Police Help', num: '100', icon: ShieldAlert, color: 'text-blue-700 bg-white border-blue-200' },
+              { label: isTe ? 'అంబులెన్స్' : isHi ? 'एम्बुलेंस' : 'Ambulance', num: '108', icon: HeartPulse, color: 'text-emerald-700 bg-white border-emerald-200' },
+              { label: isTe ? 'హెల్ప్‌లైన్' : isHi ? 'हेल्पलाइन' : 'Helpline', num: '1800-425-4567', icon: PhoneCall, color: 'text-amber-800 bg-white border-amber-200' },
             ].map((em, i) => (
               <a
                 key={i}
@@ -250,15 +287,23 @@ export default function HomePage() {
               📶
             </div>
             <div>
-              <div className="font-extrabold text-sm text-stone-800">Available Completely Offline</div>
-              <div className="text-xs text-stone-500">Facility locations and basic map navigation work without Internet</div>
+              <div className="font-extrabold text-sm text-stone-800">
+                {isTe ? 'పూర్తిగా ఆఫ్‌లైన్‌లో అందుబాటులో ఉంది' : isHi ? 'पूरी तरह से ऑफ़लाइन उपलब्ध' : 'Available Completely Offline'}
+              </div>
+              <div className="text-xs text-stone-500">
+                {isTe
+                  ? 'ఇంటర్నెట్ లేకుండానే సౌకర్యాల స్థానాలు మరియు మ్యాప్ నావిగేషన్ పని చేస్తాయి'
+                  : isHi
+                  ? 'इंटरनेट के बिना भी सुविधाएं और नक्शा नेविगेशन काम करता है'
+                  : 'Facility locations and map navigation work without Internet'}
+              </div>
             </div>
           </div>
           <Link
             to="/help"
             className="text-xs font-bold text-[#991b1b] bg-[#fff5f5] hover:bg-[#ffebeb] px-3 py-2 rounded-xl transition flex-shrink-0"
           >
-            Learn More
+            {isTe ? 'మరిన్ని వివరాలు' : isHi ? 'अधिक जानें' : 'Learn More'}
           </Link>
         </div>
       </div>

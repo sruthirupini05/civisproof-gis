@@ -5,36 +5,39 @@ import {
   MapPin,
   Navigation,
   Clock,
-  Users,
-  Info,
   ArrowLeft,
   Heart,
-  Share2,
   CheckCircle2,
-  Accessibility,
-  Sparkles,
   QrCode,
-  Download,
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { facilitiesAPI, qrAPI } from '../services/api.js';
 import { getCachedFacility, cacheFacility } from '../services/db.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
 import { getPublicAppUrl } from '../services/config.js';
+import { useLanguageStore } from '../store/useStore.js';
 
 const CATEGORY_META = {
-  toilet: { label: 'Public Washroom', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
-  water: { label: 'Drinking Water Station', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
-  medical: { label: 'Medical Camp & First-Aid', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
-  ghat: { label: 'Godavari Bathing Ghat', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
-  shelter: { label: 'Pilgrim Rest Area', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
-  parking: { label: 'Vehicle Parking Zone', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
+  toilet: { label: 'Public Washroom', teLabel: 'సార్వజనీన మరుగుదొడ్డి', hiLabel: 'सार्वजनिक शौचालय', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
+  water: { label: 'Drinking Water Station', teLabel: 'త్రాగునీటి కేంద్రం', hiLabel: 'पेयजल केंद्र', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
+  medical: { label: 'Medical Camp & First-Aid', teLabel: 'వైద్య శిబిరం & ప్రథమ చికిత్స', hiLabel: 'चिकित्सा शिविर', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
+  ghat: { label: 'Godavari Bathing Ghat', teLabel: 'గోదావరి స్నాన ఘాట్', hiLabel: 'गोदावरी स्नान घाट', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
+  shelter: { label: 'Pilgrim Rest Area', teLabel: 'యాత్రికుల విశ్రాంతి ప్రదేశం', hiLabel: 'तीर्थयात्री विश्राम स्थल', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
+  parking: { label: 'Vehicle Parking Zone', teLabel: 'పార్కింగ్ స్థలం', hiLabel: 'वाहन पार्किंग', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
 };
+
+function isValidFacility(f) {
+  return f && typeof f === 'object' && f.lat != null && f.lng != null;
+}
 
 export default function FacilityPage() {
   const { token } = useParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currentLang } = useLanguageStore();
   const navigate = useNavigate();
+
+  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
+  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
 
   const [facility, setFacility] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,42 +51,56 @@ export default function FacilityPage() {
       setError(null);
       let found = null;
 
-      if (navigator.onLine) {
+      // 1. Direct match in bundled fallback database
+      const direct = fallbackFacilities.find(
+        (f) => (f.qr_token === token || f.id === token) && isValidFacility(f)
+      );
+      if (direct) found = direct;
+
+      // 2. Check IndexedDB
+      if (!found) {
+        try {
+          const cached = await getCachedFacility(token);
+          if (isValidFacility(cached)) found = cached;
+        } catch {}
+      }
+
+      // 3. Online fetch if network active
+      if (!found && navigator.onLine) {
         try {
           const res = await qrAPI.resolve(token);
-          found = res?.facility ?? res?.data?.facility ?? res?.data ?? res;
-          if (found) await cacheFacility(found);
+          const candidate = res?.facility ?? res?.data?.facility ?? res?.data ?? res;
+          if (isValidFacility(candidate)) {
+            found = candidate;
+            await cacheFacility(candidate);
+          }
         } catch {}
       }
 
       if (!found) {
-        try {
-          found = await getCachedFacility(token);
-        } catch {}
-      }
-
-      if (!found) {
-        found = fallbackFacilities.find(
-          (f) => f.qr_token === token || f.id === token
-        ) ?? null;
-      }
-
-      if (!found) {
-        setError('Facility could not be found.');
+        setError(
+          isTe
+            ? 'ఈ సౌకర్యం వివరాలు కనుగొనబడలేదు.'
+            : isHi
+            ? 'सुविधा नहीं मिली।'
+            : 'Facility could not be found.'
+        );
       } else {
         setFacility(found);
       }
       setLoading(false);
     }
     fetchFacility();
-  }, [token]);
+  }, [token, isTe, isHi]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#fffdf9]">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-[#991b1b] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-stone-600 text-sm font-semibold">Loading facility details…</p>
+          <p className="text-stone-600 text-sm font-semibold">
+            {isTe ? 'వివరాలు లోడ్ అవుతున్నాయి…' : isHi ? 'विवरण लोड हो रहा है…' : 'Loading details…'}
+          </p>
         </div>
       </div>
     );
@@ -94,21 +111,26 @@ export default function FacilityPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#fffdf9]">
         <div className="max-w-sm text-center bg-white p-6 rounded-3xl border border-amber-200 shadow-lg">
           <div className="text-4xl mb-3">⚠️</div>
-          <h2 className="text-lg font-bold text-stone-900 mb-2">Facility Not Found</h2>
-          <p className="text-xs text-stone-500 mb-4">{error || 'This facility is not registered.'}</p>
+          <h2 className="text-lg font-bold text-stone-900 mb-2">
+            {isTe ? 'సౌకర్యం కనుగొనబడలేదు' : isHi ? 'सुविधा नहीं मिली' : 'Facility Not Found'}
+          </h2>
+          <p className="text-xs text-stone-500 mb-4">{error}</p>
           <button
             onClick={() => navigate('/map')}
             className="w-full py-2.5 bg-[#991b1b] text-white font-bold text-xs rounded-xl"
           >
-            Back to Map
+            {isTe ? 'మ్యాప్‌కు తిరిగి వెళ్ళండి' : isHi ? 'नक्शे पर वापस जाएं' : 'Back to Map'}
           </button>
         </div>
       </div>
     );
   }
 
-  const meta = CATEGORY_META[facility.category] || { label: 'Civic Facility', icon: '📍', color: '#991b1b', bg: '#fef2f2' };
+  const meta = CATEGORY_META[facility.category] || { label: 'Civic Facility', teLabel: 'పుష్కర సౌకర్యం', hiLabel: 'पुष्कर सुविधा', icon: '📍', color: '#991b1b', bg: '#fef2f2' };
   const facilityUrl = `${getPublicAppUrl()}/facility/${facility.qr_token || facility.id}`;
+
+  const displayName = isTe ? facility.name_te || facility.name : isHi ? facility.name_hi || facility.name : facility.name;
+  const displayDesc = isTe ? facility.description_te || facility.description : isHi ? facility.description_hi || facility.description : facility.description;
 
   return (
     <div className="min-h-full pb-24 bg-[#fffdf9]">
@@ -123,7 +145,7 @@ export default function FacilityPage() {
         </button>
 
         <h1 className="font-extrabold text-sm sm:text-base text-stone-900 tracking-tight">
-          Facility Details
+          {isTe ? 'సౌకర్య వివరాలు' : isHi ? 'सुविधा विवरण' : 'Facility Details'}
         </h1>
 
         <div className="flex items-center gap-1.5">
@@ -147,7 +169,7 @@ export default function FacilityPage() {
               {meta.icon}
             </div>
             <span className="text-xs font-bold text-amber-900/80 uppercase tracking-wider bg-white/80 px-3 py-1 rounded-full border border-amber-200/60">
-              {meta.label}
+              {isTe ? meta.teLabel : isHi ? meta.hiLabel : meta.label}
             </span>
           </div>
 
@@ -166,16 +188,12 @@ export default function FacilityPage() {
         <div className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-1.5">
             <h2 className="text-lg sm:text-xl font-black text-stone-900 tracking-tight">
-              {facility.name}
+              {displayName}
             </h2>
             <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex-shrink-0">
-              Available
+              {isTe ? 'అందుబాటులో ఉంది' : isHi ? 'उपलब्ध' : 'Available'}
             </span>
           </div>
-
-          {facility.name_te && (
-            <p className="text-xs font-semibold text-[#881337] mb-2">{facility.name_te}</p>
-          )}
 
           {facility.address && (
             <p className="text-xs text-stone-500 flex items-center gap-1.5 mt-1">
@@ -190,34 +208,42 @@ export default function FacilityPage() {
           <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
             <div className="text-stone-400 flex justify-center mb-1">🚶</div>
             <div className="font-extrabold text-sm text-stone-900">~350 m</div>
-            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">Distance</div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">
+              {isTe ? 'దూరం' : isHi ? 'दूरी' : 'Distance'}
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
             <div className="text-stone-400 flex justify-center mb-1">🕒</div>
             <div className="font-extrabold text-sm text-stone-900">24 × 7</div>
-            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">Open</div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">
+              {isTe ? 'తెరిచి ఉంది' : isHi ? 'खुला है' : 'Open'}
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
             <div className="text-stone-400 flex justify-center mb-1">♿</div>
-            <div className="font-extrabold text-sm text-stone-900">Accessible</div>
-            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">For All</div>
+            <div className="font-extrabold text-sm text-stone-900">
+              {isTe ? 'అందరికీ' : isHi ? 'सुलभ' : 'Accessible'}
+            </div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">
+              {isTe ? 'అందుబాటు' : isHi ? 'सुविधा' : 'For All'}
+            </div>
           </div>
         </div>
 
         {/* ── Facilities Verified Checklist (Screen 4) ── */}
         <div className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm space-y-3">
           <h3 className="font-extrabold text-sm text-stone-900 tracking-tight">
-            Facility Features & Verification
+            {isTe ? 'సౌకర్యాలు & అధికారిక ధృవీకరణ' : isHi ? 'सुविधाएं एवं आधिकारिक सत्यापन' : 'Features & Civic Verification'}
           </h3>
 
           <div className="space-y-2">
             {[
-              'Men & Women Separate Facilities',
-              'Wheelchair Accessible Ramp & Railings',
-              'Regular Sanitation & RO Water Supply',
-              'Official CivicProof Verified Infrastructure',
+              isTe ? 'పురుషులు & మహిళలకు వేర్వేరు సౌకర్యాలు' : isHi ? 'महिला व पुरुषों के लिए अलग सुविधाएं' : 'Men & Women Separate Facilities',
+              isTe ? 'వీల్‌చైర్ ర్యాంప్ మరియు ప్రత్యేక సదుపాయాలు' : isHi ? 'व्हीलचेयर एवं विशेष सहायता सुलभ' : 'Wheelchair Accessible Ramp & Railings',
+              isTe ? 'నిరంతర పారిశుద్ధ్యం మరియు RO తాగునీటి సరఫరా' : isHi ? 'नियमित स्वच्छता एवं RO पेयजल आपूर्ति' : 'Regular Sanitation & RO Water Supply',
+              isTe ? 'సివిక్ప్రూఫ్ GIS ద్వారా ధృవీకరించబడింది' : isHi ? 'सिविकप्रूफ GIS प्रमाणित अवसंरचना' : 'Official CivicProof Verified Infrastructure',
             ].map((feat, i) => (
               <div key={i} className="flex items-center gap-2.5 text-xs text-stone-700">
                 <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
@@ -226,9 +252,9 @@ export default function FacilityPage() {
             ))}
           </div>
 
-          {facility.description && (
+          {displayDesc && (
             <p className="text-xs text-stone-500 pt-2 border-t border-stone-100 leading-relaxed">
-              {facility.description}
+              {displayDesc}
             </p>
           )}
         </div>
@@ -244,7 +270,9 @@ export default function FacilityPage() {
             className="w-full py-4 px-6 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-red-950/20 active:scale-[0.99] transition"
           >
             <Navigation size={18} />
-            <span>Navigate to Facility</span>
+            <span>
+              {isTe ? 'సౌకర్యానికి నావిగేట్ చేయండి' : isHi ? 'सुविधा तक नेविगेट करें' : 'Navigate to Facility'}
+            </span>
           </button>
         </div>
       </div>
@@ -253,18 +281,24 @@ export default function FacilityPage() {
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center border border-amber-200 shadow-2xl space-y-4">
-            <h4 className="font-extrabold text-base text-stone-900">Facility QR Code</h4>
+            <h4 className="font-extrabold text-base text-stone-900">
+              {isTe ? 'సౌకర్యం అధికారిక QR కోడ్' : isHi ? 'सुविधा आधिकारिक क्यूआर कोड' : 'Facility QR Code'}
+            </h4>
             <div className="p-4 bg-[#fefaf3] rounded-2xl border border-amber-200 inline-block shadow-inner">
               <QRCodeCanvas value={facilityUrl} size={180} level="H" />
             </div>
             <p className="text-xs text-stone-500">
-              Scan this code with any phone camera to access this facility page offline or online.
+              {isTe
+                ? 'ఏ ఫోన్ కెమెరా ద్వారానైనా ఈ QR కోడ్‌ను స్కాన్ చేసి ఆఫ్‌లైన్ లేదా ఆన్‌లైన్‌లో నేరుగా ఈ పేజీని పొందవచ్చు.'
+                : isHi
+                ? 'किसी भी फोन कैमरे से स्कैन कर ऑफलाइन या ऑनलाइन सीधे विवरण प्राप्त करें।'
+                : 'Scan this code with any phone camera to access this facility page offline or online.'}
             </p>
             <button
               onClick={() => setShowQrModal(false)}
               className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl"
             >
-              Close
+              {isTe ? 'మూసివేయండి' : isHi ? 'बंद करें' : 'Close'}
             </button>
           </div>
         </div>

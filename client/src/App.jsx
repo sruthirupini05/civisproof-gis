@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/UI/Layout.jsx';
 import LoadingSpinner from './components/UI/LoadingSpinner.jsx';
 import OfflineIndicator from './components/UI/OfflineIndicator.jsx';
+import ProtectedRoute from './components/UI/ProtectedRoute.jsx';
 import { cacheAllFacilities } from './services/db.js';
 import { facilitiesAPI } from './services/api.js';
 import { setupOnlineSync } from './services/sync.js';
@@ -61,6 +62,7 @@ export default function App() {
       <Suspense fallback={<LoadingSpinner fullScreen />}>
         <Routes>
           <Route path="/" element={<Layout />}>
+            {/* Public Pilgrim Routes */}
             <Route index element={<HomePage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="facility/:token" element={<FacilityPage />} />
@@ -68,11 +70,34 @@ export default function App() {
             <Route path="help" element={<HelpPage />} />
             <Route path="saved" element={<HelpPage />} />
             <Route path="scan" element={<ScanPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="city-qr" element={<CityQRPage />} />
-            <Route path="inspect/:facilityId" element={<InspectPage />} />
             <Route path="login" element={<LoginPage />} />
-            <Route path="admin/qr" element={<QRAdminPage />} />
+
+            {/* Protected Authorized Field Staff & Inspector Routes (Normal users restricted) */}
+            <Route
+              path="inspect/:facilityId"
+              element={
+                <ProtectedRoute allowedRoles={['inspector', 'admin']}>
+                  <InspectPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['inspector', 'admin']}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/qr"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <QRAdminPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </Suspense>

@@ -2,17 +2,17 @@ import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer } from 'lucide-react';
-import { useAuthStore } from '../../store/useStore.js';
+import { useAuthStore, useLanguageStore } from '../../store/useStore.js';
 import LanguageSelector from './LanguageSelector.jsx';
 
 export default function Layout() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, clearAuth } = useAuthStore();
+  const { currentLang } = useLanguageStore();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Hide header and bottom nav on dedicated full-screen navigation mode if desired
-  const isNavigateView = location.pathname.startsWith('/navigate');
+  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
+  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fffdf9] text-stone-900 font-sans">
@@ -26,13 +26,23 @@ export default function Layout() {
             </div>
             <div>
               <div className="font-extrabold text-sm md:text-base leading-tight tracking-tight text-white flex items-center gap-1.5">
-                <span>Godavari Pushkaralu 2027</span>
+                <span>
+                  {isTe
+                    ? 'గోదావరి పుష్కరాలు 2027'
+                    : isHi
+                    ? 'गोदावरी पुष्करालु 2027'
+                    : 'Godavari Pushkaralu 2027'}
+                </span>
                 <span className="text-[11px] font-bold text-amber-300 bg-black/20 px-1.5 py-0.5 rounded-full hidden sm:inline">
                   GIS
                 </span>
               </div>
               <div className="text-[11px] text-amber-200/90 font-medium hidden sm:block">
-                CivicProof — Facilities & Pilgrimage Navigation
+                {isTe
+                  ? 'సివిక్ప్రూఫ్ — సౌకర్యాల అన్వేషణ & యాత్రికుల నావిగేషన్'
+                  : isHi
+                  ? 'सिविकप्रूफ — सुविधाएं और तीर्थयात्री नेविगेशन'
+                  : 'CivicProof — Facilities & Pilgrimage Navigation'}
               </div>
             </div>
           </NavLink>
@@ -46,7 +56,9 @@ export default function Layout() {
               className="flex items-center gap-1 text-xs bg-amber-400 hover:bg-amber-300 text-[#7f1d1d] font-bold px-3 py-1.5 rounded-xl transition shadow-xs"
             >
               <QrCode size={13} />
-              <span className="hidden sm:inline">City QR</span>
+              <span className="hidden sm:inline">
+                {isTe ? 'సిటీ QR' : isHi ? 'सिटी क्यूआर' : 'City QR'}
+              </span>
             </NavLink>
 
             {user?.role === 'admin' && (
@@ -63,7 +75,7 @@ export default function Layout() {
             {user ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-amber-200 hidden md:inline">
-                  {user.username}
+                  {user.username} ({user.role})
                 </span>
                 <button
                   onClick={() => {
@@ -73,7 +85,9 @@ export default function Layout() {
                   className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
                 >
                   <LogOut size={13} />
-                  <span className="hidden sm:inline">Logout</span>
+                  <span className="hidden sm:inline">
+                    {isTe ? 'లాగౌట్' : isHi ? 'लॉगआउट' : 'Logout'}
+                  </span>
                 </button>
               </div>
             ) : (
@@ -82,7 +96,9 @@ export default function Layout() {
                 className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
               >
                 <LogIn size={13} />
-                <span className="hidden sm:inline">Login</span>
+                <span className="hidden sm:inline">
+                  {isTe ? 'లాగిన్' : isHi ? 'लॉगिन' : 'Login'}
+                </span>
               </NavLink>
             )}
           </div>
@@ -99,11 +115,10 @@ export default function Layout() {
       {/* ── Mobile Sacred Bottom Navigation Bar ── */}
       <nav className="bg-[#fffdf9] border-t border-amber-200/80 flex sm:hidden z-30 shadow-lg px-2 py-1 justify-around">
         {[
-          { to: '/', icon: Home, label: 'Home' },
-          { to: '/map', icon: Map, label: 'Map' },
-          { to: '/scan', icon: QrCode, label: 'Scan QR' },
-          { to: '/saved', icon: Heart, label: 'Saved' },
-          { to: '/help', icon: HelpCircle, label: 'Help' },
+          { to: '/', icon: Home, label: isTe ? 'హోమ్' : isHi ? 'होम' : 'Home' },
+          { to: '/map', icon: Map, label: isTe ? 'మ్యాప్' : isHi ? 'नक्शा' : 'Map' },
+          { to: '/scan', icon: QrCode, label: isTe ? 'స్కాన్' : isHi ? 'स्कैन' : 'Scan' },
+          { to: '/help', icon: HelpCircle, label: isTe ? 'సహాయం' : isHi ? 'मदद' : 'Help' },
         ].map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

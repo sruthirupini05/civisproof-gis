@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'civicproof-gis';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise;
 
@@ -16,10 +16,13 @@ function getDB() {
           store.createIndex('cachedAt', 'cachedAt', { unique: false });
         }
         if (!db.objectStoreNames.contains('routes')) {
-          db.createObjectStore('routes', { keyPath: 'id' }); // id = `${startLat},${startLng}->${destId}`
+          db.createObjectStore('routes', { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains('drafts')) {
           db.createObjectStore('drafts', { keyPath: 'localId' });
+        }
+        if (!db.objectStoreNames.contains('users')) {
+          db.createObjectStore('users', { keyPath: 'username' });
         }
       },
     });
@@ -27,28 +30,35 @@ function getDB() {
   return dbPromise;
 }
 
-// Facilities
+// Facilities Cache
 export async function cacheFacility(facility) {
+  if (!facility || !facility.id) return;
   const db = await getDB();
   await db.put('facilities', { ...facility, cachedAt: new Date().toISOString() });
 }
 
 export async function cacheAllFacilities(facilities) {
+  if (!Array.isArray(facilities) || facilities.length === 0) return;
   const db = await getDB();
   const tx = db.transaction('facilities', 'readwrite');
-  await Promise.all(facilities.map((f) => tx.store.put({ ...f, cachedAt: new Date().toISOString() })));
+  await Promise.all(
+    facilities
+      .filter((f) => f && f.id)
+      .map((f) => tx.store.put({ ...f, cachedAt: new Date().toISOString() }))
+  );
   await tx.done;
 }
 
-export async function getCachedFacility(id) {
+export async function getCachedFacility(idOrToken) {
+  if (!idOrToken) return null;
   const db = await getDB();
-  // Try by id first
-  let f = await db.get('facilities', id);
+  let f = await db.get('facilities', idOrToken);
   if (!f) {
-    // Try by qr_token
-    f = await db.getFromIndex('facilities', 'qr_token', id);
+    try {
+      f = await db.getFromIndex('facilities', 'qr_token', idOrToken);
+    } catch {}
   }
-  return f;
+  return f || null;
 }
 
 export async function getCachedFacilities(category) {
@@ -59,21 +69,14 @@ export async function getCachedFacilities(category) {
   return db.getAll('facilities');
 }
 
-// Routes
-export async function cacheRoute(routeData) {
-  const db = await getDB();
-  await db.put('routes', { ...routeData, cachedAt: new Date().toISOString() });
-}
-
-export async function getCachedRoute(id) {
-  const db = await getDB();
-  return db.get('routes', id);
-}
-
-// Drafts
+// Offline Inspection Drafts
 export async function saveDraft(draft) {
   const db = await getDB();
-  await db.put('drafts', { ...draft, savedAt: new Date().toISOString(), syncStatus: 'pending' });
+  await db.put('drafts', {
+    ...draft,
+    status: draft.status || 'pending',
+    savedAt: new Date().toISOString(),
+  });
 }
 
 export async function getDrafts() {
@@ -81,13 +84,81 @@ export async function getDrafts() {
   return db.getAll('drafts');
 }
 
+export async function updateDraftStatus(localId, status, error = null) {
+  const db = await getDB();
+  const draft = await db.get('drafts', localId);
+  if (draft) {
+    draft.status = status;
+    if (error) draft.error = error;
+    await db.put('drafts', draft);
+  }
+}
+
 export async function deleteDraft(localId) {
   const db = await getDB();
   await db.delete('drafts', localId);
 }
 
-export async function updateDraftStatus(localId, syncStatus) {
+// User Accounts Database
+export async function saveUserToDatabase(userAccount) {
+  if (!userAccount || !userAccount.username) return;
   const db = await getDB();
-  const draft = await db.get('drafts', localId);
-  if (draft) await db.put('drafts', { ...draft, syncStatus });
+  await db.put('users', {
+    ...userAccount,
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Also persist in localStorage backup
+  try {
+    const raw = localStorage.getItem('civicproof_users_db');
+    const existing = raw ? JSON.parse(raw) : {};
+    existing[userAccount.username.toLowerCase()] = userAccount;
+    localStorage.setItem('civicproof_users_db', JSON.stringify(existing));
+  } catch {}
+}
+
+export async function getUserFromDatabase(username) {
+  if (!username) return null;
+  const normalized = username.trim().toLowerCase();
+  
+  // 1. Check IndexedDB
+  try {
+    const db = await getDB();
+    const u = await db.get('users', normalized);
+    if (u) return u;
+  } catch {}
+
+  // 2. Check localStorage backup
+  try {
+    const raw = localStorage.getItem('civicproof_users_db');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed[normalized]) return parsed[normalized];
+    }
+  } catch {}
+
+  return null;
+}
+
+export async function getAllUsersFromDatabase() {
+  const list = [];
+  try {
+    const db = await getDB();
+    const idbUsers = await db.getAll('users');
+    list.push(...idbUsers);
+  } catch {}
+
+  try {
+    const raw = localStorage.getItem('civicproof_users_db');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Object.values(parsed).forEach((u) => {
+        if (!list.some((existing) => existing.username === u.username)) {
+          list.push(u);
+        }
+      });
+    }
+  } catch {}
+
+  return list;
 }

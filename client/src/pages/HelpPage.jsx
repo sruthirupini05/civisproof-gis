@@ -8,20 +8,29 @@ import {
   Search,
   Accessibility,
   Bell,
-  WifiOff,
   CheckCircle2,
   ArrowRight,
-  MapPin,
 } from 'lucide-react';
+import { useLanguageStore } from '../store/useStore.js';
 
 export default function HelpPage() {
+  const { currentLang } = useLanguageStore();
+  const isTe = (currentLang || 'te').startsWith('te');
+  const isHi = (currentLang || 'te').startsWith('hi');
+
   return (
     <div className="min-h-full pb-20 bg-[#fffdf9]">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white p-6 shadow-md text-center">
-        <h1 className="text-xl sm:text-2xl font-black mb-1">Emergency Help & Services</h1>
+        <h1 className="text-xl sm:text-2xl font-black mb-1">
+          {isTe ? 'అత్యవసర సహాయం & సేవలు' : isHi ? 'आपातकालीन सहायता और सेवाएं' : 'Emergency Help & Services'}
+        </h1>
         <p className="text-xs sm:text-sm text-amber-200/90">
-          Godavari Pushkaralu 2027 — 24×7 Pilgrim Support
+          {isTe
+            ? 'గోదావరి పుష్కరాలు 2027 — 24×7 యాత్రికుల రక్షణ'
+            : isHi
+            ? 'गोदावरी पुष्करालु 2027 — 24×7 तीर्थयात्री सहायता'
+            : 'Godavari Pushkaralu 2027 — 24×7 Pilgrim Support'}
         </p>
       </div>
 
@@ -33,17 +42,45 @@ export default function HelpPage() {
               🆘
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#881337]">Emergency Help</h2>
-              <p className="text-xs text-stone-500">Tap to call emergency response directly</p>
+              <h2 className="text-base font-extrabold text-[#881337]">
+                {isTe ? 'అత్యవసర హెల్ప్‌లైన్లు' : isHi ? 'आपातकालीन हेल्पलाइन' : 'Emergency Help'}
+              </h2>
+              <p className="text-xs text-stone-500">
+                {isTe ? 'నేరుగా కాల్ చేయడానికి నంబర్‌పై నొక్కండి' : isHi ? 'कॉल करने के लिए नंबर पर टैप करें' : 'Tap to call directly'}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { label: 'Emergency Response', sub: 'Toll-free 24×7', num: '108', icon: PhoneCall, bg: 'bg-red-50 text-red-900 border-red-200' },
-              { label: 'Police Pushkaram Cell', sub: 'Rajahmundry Police', num: '100', icon: ShieldAlert, bg: 'bg-blue-50 text-blue-900 border-blue-200' },
-              { label: 'Ambulance & Trauma', sub: 'Ghat Zone Mobile Units', num: '108', icon: HeartPulse, bg: 'bg-emerald-50 text-emerald-900 border-emerald-200' },
-              { label: 'Pilgrim Information Desk', sub: 'Municipal Help Desk', num: '0883-2475555', icon: Info, bg: 'bg-amber-50 text-amber-900 border-amber-200' },
+              {
+                label: isTe ? 'అత్యవసర ప్రతిస్పందన' : isHi ? 'आपातकालीन प्रतिक्रिया' : 'Emergency Response',
+                sub: isTe ? 'ఉచిత టోల్‌ఫ్రీ 24×7' : isHi ? 'टोल फ्री 24×7' : 'Toll-free 24×7',
+                num: '108',
+                icon: PhoneCall,
+                bg: 'bg-red-50 text-red-900 border-red-200',
+              },
+              {
+                label: isTe ? 'పోలీస్ పుష్కర విభాగం' : isHi ? 'पुष्करम पुलिस सहायता' : 'Police Pushkaram Cell',
+                sub: isTe ? 'రాజమండ్రి పోలీస్ కంట్రోల్' : isHi ? 'राजमुंदरी पुलिस कंट्रोल' : 'Rajahmundry Police',
+                num: '100',
+                icon: ShieldAlert,
+                bg: 'bg-blue-50 text-blue-900 border-blue-200',
+              },
+              {
+                label: isTe ? 'అంబులెన్స్ & ట్రామా' : isHi ? 'एम्बुलेंस व ट्रॉमा यूनिट' : 'Ambulance & Trauma',
+                sub: isTe ? 'ఘాట్ జోన్ మొబైల్ విభాగాలు' : isHi ? 'घाट क्षेत्र मोबाइल यूनिट' : 'Ghat Zone Mobile Units',
+                num: '108',
+                icon: HeartPulse,
+                bg: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+              },
+              {
+                label: isTe ? 'యాత్రికుల సమాచార కేంద్రం' : isHi ? 'तीर्थयात्री सूचना डेस्क' : 'Pilgrim Help Desk',
+                sub: isTe ? 'పురపాలక సహాయ కేంద్రం' : isHi ? 'नगर निगम हेल्प डेस्क' : 'Municipal Help Desk',
+                num: '0883-2475555',
+                icon: Info,
+                bg: 'bg-amber-50 text-amber-900 border-amber-200',
+              },
             ].map((item, idx) => (
               <a
                 key={idx}
@@ -74,36 +111,40 @@ export default function HelpPage() {
               ℹ️
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-stone-800">More Services</h2>
-              <p className="text-xs text-stone-500">Event guidance and pilgrim accessibility</p>
+              <h2 className="text-base font-extrabold text-stone-800">
+                {isTe ? 'ఇతర సేవలు & మార్గదర్శకాలు' : isHi ? 'अन्य सेवाएं एवं मार्गदर्शन' : 'More Services'}
+              </h2>
+              <p className="text-xs text-stone-500">
+                {isTe ? 'పుష్కర సమాచారం మరియు సౌకర్యాలు' : isHi ? 'पुष्करम सूचना और सुविधाएं' : 'Event guidance and accessibility'}
+              </p>
             </div>
           </div>
 
           <div className="space-y-2.5">
             {[
               {
-                title: 'Information Centres',
-                desc: 'Located at Rajahmundry railway station, bus stands & main ghats',
+                title: isTe ? 'సమాచార కేంద్రాలు' : isHi ? 'सूचना केंद्र' : 'Information Centres',
+                desc: isTe ? 'రైల్వే స్టేషన్, బస్ స్టాండ్ మరియు ప్రధాన ఘాట్ల వద్ద' : isHi ? 'रेलवे स्टेशन, बस स्टैंड एवं मुख्य घाटों पर' : 'At railway station, bus stands & main ghats',
                 icon: Info,
                 link: '/map?category=shelter',
               },
               {
-                title: 'Lost & Found Counters',
-                desc: 'Report or find lost personal belongings and family members',
+                title: isTe ? 'తప్పిపోయిన వారి / వస్తువుల సహాయ కేంద్రం' : isHi ? 'खोया-पाया केंद्र' : 'Lost & Found Counters',
+                desc: isTe ? 'వస్తువులు లేదా కుటుంబ సభ్యులను గుర్తించడానికి' : isHi ? 'खोई वस्तुओं या परिजनों की सूचना के लिए' : 'Report or find lost items and relatives',
                 icon: Search,
                 link: '/map?q=Information',
               },
               {
-                title: 'Accessibility Services',
-                desc: 'Wheelchair access points, battery carts & assistance for elderly',
+                title: isTe ? 'ప్రత్యేక సహాయ & వీల్‌చైర్ సేవలు' : isHi ? 'दिव्यांग व वृद्ध सहायता सेवा' : 'Accessibility Services',
+                desc: isTe ? 'వృద్ధులు మరియు దివ్యాంగులకు ఉచిత బ్యాటరీ కార్లు' : isHi ? 'बुजुर्गों और दिव्यांगों के लिए बैटरी कार व व्हीलचेयर' : 'Wheelchairs & battery assistance for elderly',
                 icon: Accessibility,
                 link: '/map?category=toilet',
               },
               {
-                title: 'Official Event Updates',
-                desc: 'Live crowd density alerts and ghat operational status',
+                title: isTe ? 'అధికారిక పుష్కర నవీకరణలు' : isHi ? 'आधिकारिक पुष्करम अपडेट' : 'Official Event Updates',
+                desc: isTe ? 'ఘాట్ల రద్దీ సమాచారం మరియు హెచ్చరికలు' : isHi ? 'घाटों पर भीड़ एवं संचालन की ताजा स्थिति' : 'Crowd density and ghat operational updates',
                 icon: Bell,
-                link: '/dashboard',
+                link: '/map',
               },
             ].map((srv, idx) => (
               <Link
@@ -135,19 +176,24 @@ export default function HelpPage() {
               📶
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#881337]">You're Ready for Offline Use</h2>
+              <h2 className="text-base font-extrabold text-[#881337]">
+                {isTe ? 'మీరు ఆఫ్‌లైన్‌లో ఉపయోగించడానికి సిద్ధంగా ఉన్నారు' : isHi ? 'आप ऑफ़लाइन उपयोग के लिए तैयार हैं' : "You're Ready for Offline Use"}
+              </h2>
               <p className="text-xs text-stone-600">
-                You can explore maps, facilities and navigation even without mobile network
+                {isTe
+                  ? 'మొబైల్ సిగ్నల్ లేకపోయినా మ్యాప్‌లు, సౌకర్యాలు మరియు నావిగేషన్ పని చేస్తాయి'
+                  : isHi
+                  ? 'मोबाइल नेटवर्क न होने पर भी नक्शा, सुविधाएं और नेविगेशन उपलब्ध हैं'
+                  : 'Explore maps, facilities and navigation even without mobile network'}
               </p>
             </div>
           </div>
 
           <div className="space-y-2 mt-4 bg-white/80 p-3.5 rounded-2xl border border-amber-200/50">
             {[
-              'Facility locations and verification details cached on your device',
-              'Downloaded map area and GPS location tracking',
-              'Basic straight-line navigation fallback',
-              'Emergency contact numbers accessible anytime',
+              isTe ? 'సౌకర్యాల స్థానాలు మరియు సమాచారం మీ పరికరంలో భద్రపరచబడ్డాయి' : isHi ? 'सुविधाओं के स्थान और विवरण डिवाइस में सुरक्षित हैं' : 'Facility locations and verification details cached on device',
+              isTe ? 'డౌన్‌లోడ్ చేసిన మ్యాప్ ప్రాంతం మరియు GPS ట్రాకింగ్' : isHi ? 'ऑफ़लाइन नक्शा और जीपीएस नेविगेशन' : 'Downloaded map area and GPS tracking',
+              isTe ? 'అత్యవసర ఫోన్ నంబర్లు ఎల్లప్పుడూ అందుబాటులో ఉంటాయి' : isHi ? 'आपातकालीन संपर्क नंबर हमेशा उपलब्ध हैं' : 'Emergency contact numbers accessible anytime',
             ].map((item, idx) => (
               <div key={idx} className="flex items-start gap-2.5 text-xs text-stone-700">
                 <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />

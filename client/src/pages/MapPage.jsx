@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -11,25 +11,22 @@ import {
   Info,
   X,
   ArrowLeft,
-  Layers,
   MapPin,
-  Clock,
 } from 'lucide-react';
 import { facilitiesAPI } from '../services/api.js';
 import { cacheAllFacilities, getCachedFacilities } from '../services/db.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
-import StatusBadge from '../components/UI/StatusBadge.jsx';
 import { useLanguageStore } from '../store/useStore.js';
 
 const DEFAULT_CENTER = [16.9948, 81.7798]; // Rajahmundry Main Ghat
 
 const CATEGORY_META = {
-  toilet: { label: 'Toilets', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
-  water: { label: 'Water', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
-  medical: { label: 'Medical', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
-  ghat: { label: 'Ghats', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
-  shelter: { label: 'Shelters', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
-  parking: { label: 'Parking', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
+  toilet: { label: 'Toilets', teLabel: 'మరుగుదొడ్లు', hiLabel: 'शौचालय', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
+  water: { label: 'Water', teLabel: 'త్రాగునీరు', hiLabel: 'पेयजल', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
+  medical: { label: 'Medical', teLabel: 'వైద్యం', hiLabel: 'चिकित्सा', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
+  ghat: { label: 'Ghats', teLabel: 'ఘాట్లు', hiLabel: 'घाट', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
+  shelter: { label: 'Shelters', teLabel: 'విశ్రాంతి', hiLabel: 'विश्राम', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
+  parking: { label: 'Parking', teLabel: 'పార్కింగ్', hiLabel: 'पार्किंग', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
 };
 
 function hasValidCoordinates(lat, lng) {
@@ -104,6 +101,9 @@ export default function MapPage() {
   const [searchParams] = useSearchParams();
   const { currentLang } = useLanguageStore();
 
+  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
+  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
+
   const [facilities, setFacilities] = useState([]);
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'all');
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
@@ -137,7 +137,6 @@ export default function MapPage() {
       }
       setFacilities(data);
 
-      // If user came with a specific query, select matching facility
       const q = searchParams.get('q');
       if (q && data.length > 0) {
         const found = data.find((f) => f.name?.toLowerCase().includes(q.toLowerCase()));
@@ -150,7 +149,6 @@ export default function MapPage() {
     loadData();
   }, [searchParams]);
 
-  // Geolocation
   const locateUser = () => {
     if (!navigator.geolocation) return;
     setLocating(true);
@@ -185,13 +183,20 @@ export default function MapPage() {
   );
 
   const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'toilet', label: 'Toilets' },
-    { id: 'water', label: 'Water' },
-    { id: 'medical', label: 'Medical' },
-    { id: 'ghat', label: 'Ghats' },
-    { id: 'shelter', label: 'Shelters' },
+    { id: 'all', label: isTe ? 'అన్నీ' : isHi ? 'सभी' : 'All' },
+    { id: 'toilet', label: isTe ? 'మరుగుదొడ్లు' : isHi ? 'शौचालय' : 'Toilets' },
+    { id: 'water', label: isTe ? 'త్రాగునీరు' : isHi ? 'पेयजल' : 'Water' },
+    { id: 'medical', label: isTe ? 'వైద్యం' : isHi ? 'चिकित्सा' : 'Medical' },
+    { id: 'ghat', label: isTe ? 'ఘాట్లు' : isHi ? 'घाट' : 'Ghats' },
+    { id: 'shelter', label: isTe ? 'విశ్రాంతి' : isHi ? 'विश्राम' : 'Shelters' },
   ];
+
+  const getDisplayName = (f) => {
+    if (!f) return '';
+    if (isTe && f.name_te) return f.name_te;
+    if (isHi && f.name_hi) return f.name_hi;
+    return f.name;
+  };
 
   return (
     <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden bg-[#e5f2fb]">
@@ -206,7 +211,7 @@ export default function MapPage() {
             <ArrowLeft size={17} />
           </button>
           <h1 className="font-extrabold text-sm sm:text-base text-stone-900 tracking-tight">
-            Facilities Map
+            {isTe ? 'సౌకర్యాల మ్యాప్' : isHi ? 'सुविधा नक्शा' : 'Facilities Map'}
           </h1>
         </div>
 
@@ -217,7 +222,7 @@ export default function MapPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search on map..."
+            placeholder={isTe ? 'మ్యాప్‌లో వెతకండి...' : isHi ? 'नक्शे पर खोजें...' : 'Search on map...'}
             className="w-full pl-8 pr-7 py-1.5 bg-[#fefaf3] rounded-xl border border-amber-200/80 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#991b1b]"
           />
           {searchQuery && (
@@ -256,7 +261,7 @@ export default function MapPage() {
         <button
           onClick={locateUser}
           disabled={locating}
-          title="Current location"
+          title={isTe ? 'ప్రస్తుత స్థానం' : isHi ? 'वर्तमान स्थिति' : 'Current location'}
           className="w-10 h-10 bg-white hover:bg-slate-50 text-[#991b1b] rounded-2xl shadow-lg border border-amber-100 flex items-center justify-center transition active:scale-95 disabled:opacity-50"
         >
           <Crosshair size={18} className={locating ? 'animate-spin' : ''} />
@@ -279,16 +284,14 @@ export default function MapPage() {
 
           <MapController center={mapCenter} zoom={15} />
 
-          {/* User Location Beacon */}
           {userLocation && (
             <Marker position={userLocation} icon={userBeaconIcon}>
               <Popup>
-                <strong>You are here</strong>
+                <strong>{isTe ? 'మీరు ఇక్కడ ఉన్నారు' : isHi ? 'आप यहाँ हैं' : 'You are here'}</strong>
               </Popup>
             </Marker>
           )}
 
-          {/* Facility Pins */}
           {mappableFacilities.map((facility) => {
             const isSelected = selectedFacility?.id === facility.id;
             return (
@@ -312,7 +315,6 @@ export default function MapPage() {
       {selectedFacility && (
         <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-20 bg-white rounded-3xl shadow-2xl border border-amber-200/80 p-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-start gap-3">
-            {/* Category Icon Emblem */}
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-black/5"
               style={{
@@ -326,10 +328,10 @@ export default function MapPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-extrabold text-sm text-stone-900 leading-snug truncate">
-                  {selectedFacility.name}
+                  {getDisplayName(selectedFacility)}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Available
+                  {isTe ? 'అందుబాటులో ఉంది' : isHi ? 'उपलब्ध' : 'Available'}
                 </span>
               </div>
 
@@ -343,7 +345,7 @@ export default function MapPage() {
               <p className="text-[11px] font-semibold text-stone-600 mt-1 flex items-center gap-2">
                 <span>🚶 ~350 m</span>
                 <span>•</span>
-                <span>3 min walk</span>
+                <span>{isTe ? '3 నిమిషాల నడక' : isHi ? '3 मिनट पैदल' : '3 min walk'}</span>
               </p>
             </div>
 
@@ -356,7 +358,7 @@ export default function MapPage() {
             </button>
           </div>
 
-          {/* Action Buttons (Matches Screen 3) */}
+          {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-stone-100">
             <button
               onClick={() =>
@@ -367,7 +369,7 @@ export default function MapPage() {
               className="py-2.5 px-3 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"
             >
               <Navigation size={13} />
-              <span>Navigate</span>
+              <span>{isTe ? 'నావిగేట్' : isHi ? 'नेविगेट' : 'Navigate'}</span>
             </button>
 
             <button
@@ -379,7 +381,7 @@ export default function MapPage() {
               className="py-2.5 px-3 bg-white hover:bg-slate-50 border border-amber-200/90 text-stone-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition"
             >
               <Info size={13} className="text-[#991b1b]" />
-              <span>View Details</span>
+              <span>{isTe ? 'వివరాలు చూడండి' : isHi ? 'विवरण देखें' : 'View Details'}</span>
             </button>
           </div>
         </div>
