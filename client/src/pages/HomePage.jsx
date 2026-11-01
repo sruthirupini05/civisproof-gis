@@ -135,34 +135,30 @@ export default function HomePage() {
 
   return (
     <div className="min-h-full pb-20 bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-slate-100 transition-colors">
-      {/* ── Sacred Welcome Hero Section (Matching Reference 1 & 2) ── */}
-      <section className="relative overflow-hidden min-h-[380px] sm:min-h-[440px] flex flex-col justify-between text-white shadow-xl">
-        {/* River Ghat Pilgrimage Background Photo */}
+      {/* ── Sacred Welcome Hero Section (Original Layout with River & Ghat Background) ── */}
+      <section className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-center text-white shadow-xl pt-8 pb-12 px-4">
+        {/* River Ghat & Pushkaralu Pilgrimage Background Photo */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 transition-transform duration-1000"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=1400&auto=format&fit=crop&q=85')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=1600&auto=format&fit=crop&q=85')`,
           }}
         />
-        {/* Golden Hour / Sacred Amber Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#7f1d1d]/85 via-[#991b1b]/70 to-[#fffdf9] dark:to-[#090d16] transition-colors" />
+        {/* Sacred Saffron & Crimson Gradient Overlay for Perfect Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#7f1d1d]/85 via-[#991b1b]/75 to-[#7f1d1d]/90 transition-colors" />
 
         {/* Ambient Glow Orbs */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-0 -ml-16 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto w-full pt-8 pb-10 px-4 relative z-10 text-center flex flex-col items-center">
-          {/* ── Sacred Om Symbol with River Wave (Matching Reference Screen 1) ── */}
-          <div className="flex flex-col items-center mb-3">
-            <div className="text-5xl sm:text-6xl text-amber-300 font-serif drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] select-none animate-in zoom-in duration-300">
-              ॐ
-            </div>
-            {/* Flowing blue-and-gold river wave emblem */}
-            <div className="w-16 h-2 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full -mt-1 shadow-xs" />
+        <div className="max-w-4xl mx-auto w-full relative z-10 text-center flex flex-col items-center">
+          {/* Sacred Om Emblem */}
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 rounded-full shadow-lg text-[#881337] font-black text-2xl mb-3 border-2 border-amber-200 select-none animate-in zoom-in duration-300">
+            ॐ
           </div>
 
-          {/* Grand Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black tracking-tight text-white mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+          {/* Pushkaralu Grand Title */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 drop-shadow-md">
             {isTe
               ? 'గోదావరి పుష్కరాలు 2027'
               : isHi
@@ -170,53 +166,34 @@ export default function HomePage() {
               : 'Godavari Pushkaralu 2027'}
           </h1>
 
-          <p className="text-xs sm:text-sm font-bold tracking-widest uppercase text-amber-200/90 mb-4 drop-shadow-sm">
+          <p className="text-amber-200/90 text-xs sm:text-sm md:text-base max-w-xl mx-auto mb-6 drop-shadow-sm font-medium">
             {isTe
-              ? 'జిఐఎస్-ఆధారిత సౌకర్యాలు & పవిత్ర పుష్కర యాత్ర'
+              ? 'రాజమండ్రిలో ధృవీకరించబడిన స్నాన ఘాట్లు, శుభ్రమైన మరుగుదొడ్లు, ఉచిత తాగునీరు మరియు వైద్య సహాయాన్ని సులభంగా కనుగొనండి.'
               : isHi
-              ? 'जीआईएस आधारित सुविधाएं एवं पवित्र पुष्कर यात्रा'
-              : 'GIS-Based Facilities & Civic Infrastructure Map'}
+              ? 'राजमुंदरी में प्रमाणित स्नान घाट, स्वच्छ शौचालय, निःशुल्क पेयजल और चिकित्सा सहायता आसानी से खोजें।'
+              : 'Find certified ghats, clean washrooms, free drinking water, medical camps and pilgrim shelters across Rajahmundry.'}
           </p>
 
-          {/* Floating Sacred Card: "Welcome to Godavari Pushkaralu 2027" */}
-          <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-amber-200/60 dark:border-slate-800 text-stone-900 dark:text-slate-100 my-2">
-            <h2 className="text-lg sm:text-xl font-black text-[#881337] dark:text-rose-400 mb-1">
-              {isTe
-                ? 'గోదావరి పుష్కరాలు 2027 కి స్వాగతం'
-                : isHi
-                ? 'गोदावरी पुष्करालु 2027 में आपका स्वागत है'
-                : 'Welcome to Godavari Pushkaralu 2027'}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-300 mb-4">
-              {isTe
-                ? 'మీ సమీపంలోని ముఖ్యమైన సౌకర్యాలను కనుగొనండి.'
-                : isHi
-                ? 'अपने आस-पास आवश्यक सुविधाओं को खोजें।'
-                : 'Find essential facilities near you.'}
-            </p>
-
-            {/* CTAs Matching Reference Image 1 & 2 */}
-            <div className="flex flex-col gap-2.5">
-              {/* Button 1: Crimson Red "Find Facilities ->" */}
-              <Link
-                to="/map"
-                className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-[#991b1b] hover:bg-[#881337] text-white font-extrabold text-sm rounded-full shadow-lg shadow-red-950/20 active:scale-98 transition"
-              >
-                <span>{isTe ? 'సౌకర్యాలను కనుగొనండి' : isHi ? 'सुविधाएं खोजें' : 'Find Facilities'}</span>
-                <ArrowRight size={16} />
-              </Link>
-
-              {/* Button 2: Golden Amber "📍 Explore Nearby" */}
-              <Link
-                to="/explore"
-                className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-[#7f1d1d] font-extrabold text-sm rounded-full shadow-md active:scale-98 transition"
-              >
-                <Compass size={16} />
-                <span>{isTe ? 'సమీపంలో అన్వేషించండి' : isHi ? 'आस-पास देखें' : 'Explore Nearby'}</span>
-              </Link>
-            </div>
+          {/* Quick CTA Buttons (Original Layout) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md mx-auto">
+            <Link
+              to="/map"
+              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-3.5 px-6 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#7f1d1d] font-extrabold rounded-2xl shadow-lg active:scale-95 transition"
+            >
+              <span>{isTe ? 'సౌకర్యాలను కనుగొనండి' : isHi ? 'सुविधाएं खोजें' : 'Find Facilities'}</span>
+              <ArrowRight size={18} />
+            </Link>
+            <Link
+              to="/explore"
+              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-3.5 px-6 bg-white/15 hover:bg-white/20 border border-white/25 text-white font-bold rounded-2xl active:scale-95 transition"
+            >
+              <Compass size={18} className="text-amber-300" />
+              <span>{isTe ? 'సమీపంలో అన్వేషించండి' : isHi ? 'आस-पास देखें' : 'Explore Nearby'}</span>
+            </Link>
           </div>
         </div>
+
+        <div className="absolute bottom-0 left-0 right-0 h-4 bg-[#fffdf9] dark:bg-[#090d16] rounded-t-3xl transition-colors" />
       </section>
 
       {/* ── Main Content Container ── */}
@@ -288,9 +265,10 @@ export default function HomePage() {
                   else if (cat.id === 'transport') navigate('/transport-hubs');
                   else navigate(`/map?category=${cat.id}`);
                 }}
-                className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 hover:border-amber-300 dark:hover:border-slate-700 shadow-xs hover:shadow-md transition text-center group active:scale-98"
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 hover:border-[#991b1b] dark:hover:border-rose-500 shadow-xs hover:shadow-md transition text-center group active:scale-98"
               >
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition shadow-2xs border border-amber-200/50 dark:border-slate-600">
+                {/* Clean, prominent icon without nested circular container */}
+                <div className="text-3xl sm:text-4xl mb-2 transition-transform duration-200 group-hover:scale-110 select-none">
                   {cat.icon}
                 </div>
                 <div className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-slate-100 group-hover:text-[#991b1b] dark:group-hover:text-rose-400 transition leading-tight">

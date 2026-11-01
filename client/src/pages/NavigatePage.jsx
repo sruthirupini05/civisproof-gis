@@ -508,10 +508,8 @@ export default function NavigatePage() {
   const puck = simPuck ?? origin;
   const fName = isTe ? facility?.name_te || facility?.name : isHi ? facility?.name_hi || facility?.name : facility?.name || 'Rajamahendravaram';
 
-  // Tile layer: Use CartoDB Dark Matter for Apple Maps dark mode styling!
-  const tileUrl = isDark || isNavigating
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  // High clarity OpenStreetMap tiles (no watermarks or API keys required)
+  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   if (loading) {
     return (

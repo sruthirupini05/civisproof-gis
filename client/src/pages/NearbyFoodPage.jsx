@@ -258,11 +258,7 @@ export default function NearbyFoodPage() {
             >
               <TileLayer
                 attribution="&copy; OpenStreetMap contributors"
-                url={
-                  isDark
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                }
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {filteredPlaces.map((p) => (
                 <Marker key={p.id} position={[p.lat, p.lng]} icon={foodMarkerIcon}>

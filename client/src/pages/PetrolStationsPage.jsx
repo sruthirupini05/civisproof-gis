@@ -242,11 +242,7 @@ export default function PetrolStationsPage() {
             >
               <TileLayer
                 attribution="&copy; OpenStreetMap contributors"
-                url={
-                  isDark
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                }
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {filteredStations.map((s) => (
                 <Marker key={s.id} position={[s.lat, s.lng]} icon={fuelMarkerIcon}>

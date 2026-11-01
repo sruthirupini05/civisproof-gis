@@ -175,9 +175,7 @@ export default function ExplorePage() {
     return list;
   }, [selectedCats, searchQuery, filterFreeOnly, filterInCityOnly, sortBy, refPoint]);
 
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   const hasActiveFilters =
     !selectedCats.includes('all') ||

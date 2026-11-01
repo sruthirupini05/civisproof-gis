@@ -232,11 +232,7 @@ export default function TransportHubsPage() {
             >
               <TileLayer
                 attribution="&copy; OpenStreetMap contributors"
-                url={
-                  isDark
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                }
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {filteredHubs.map((h) => (
                 <Marker key={h.id} position={[h.lat, h.lng]} icon={transportMarkerIcon}>

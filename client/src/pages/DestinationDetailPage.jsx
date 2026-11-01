@@ -117,9 +117,7 @@ export default function DestinationDetailPage() {
 
   const related = destinations.filter((d) => d.id !== dest.id && (d.category === dest.category || d.is_in_city === dest.is_in_city)).slice(0, 3);
 
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   const name = isTe ? dest.name_te || dest.name : isHi ? dest.name_hi || dest.name : dest.name;
   const locality = isTe ? dest.locality_te || dest.locality : isHi ? dest.locality_hi || dest.locality : dest.locality;
