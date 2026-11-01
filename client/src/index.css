@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #991b1b;       /* Sacred Crimson Red */
   --color-primary-dark: #7f1d1d;  /* Deep Crimson */

@@ -163,6 +163,10 @@ export default function DestinationDetailPage() {
             src={dest.image_url}
             alt={dest.name}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/c/cc/River_Godavari_from_arch_bridge_at_Rajahmundry_01.jpg';
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
 
@@ -186,6 +190,11 @@ export default function DestinationDetailPage() {
               <MapPin size={14} className="text-amber-400 flex-shrink-0" />
               <span>{locality}</span>
             </p>
+            {dest.image_attribution && (
+              <p className="text-[10px] text-stone-300/80 mt-1 truncate drop-shadow-xs">
+                📸 {dest.image_attribution}
+              </p>
+            )}
           </div>
         </div>
 

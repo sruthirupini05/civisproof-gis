@@ -43,6 +43,7 @@ import {
   MessageSquareWarning,
   Building2,
   Check,
+  ExternalLink,
 } from 'lucide-react';
 import { qrAPI, facilitiesAPI } from '../services/api.js';
 import { getCachedFacility } from '../services/db.js';
@@ -524,17 +525,58 @@ export default function NavigatePage() {
   }
 
   if (loadErr || !destination) {
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fName || targetId || 'Rajahmundry Pushkara Ghat')}`;
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#090d16] text-white">
-        <div className="max-w-sm w-full bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center shadow-xl">
-          <p className="text-3xl mb-2">⚠️</p>
-          <h2 className="text-base font-bold text-white mb-2">{loadErr || 'Destination coordinates missing.'}</h2>
-          <button
-            onClick={() => navigate(-1)}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition"
-          >
-            {isTe ? 'వెనక్కి వెళ్ళండి' : isHi ? 'वापस जाएं' : 'Go Back'}
-          </button>
+        <div className="max-w-md w-full bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center shadow-2xl space-y-3.5">
+          <p className="text-4xl">📍</p>
+          <h2 className="text-base font-extrabold text-white">
+            {loadErr || (isTe ? 'ఈ ప్రదేశం కోఆర్డినేట్లు అందుబాటులో లేవు.' : isHi ? 'इस स्थल के निर्देशांक उपलब्ध नहीं हैं।' : 'Destination coordinates unavailable.')}
+          </h2>
+          <p className="text-xs text-stone-400">
+            {isTe
+              ? 'మీరు గూగుల్ మ్యాప్స్‌లో వెతకవచ్చు లేదా రాజమండ్రి ప్రధాన పుష్కర ఘాట్ మార్గంతో నావిగేషన్ ప్రారంభించవచ్చు.'
+              : isHi
+              ? 'आप गूगल मैप्स में खोल सकते हैं या राजमहेंद्रवरम मुख्य घाट के लिए नेविगेट कर सकते हैं।'
+              : 'You can open Google Maps navigation or calculate route to the central Rajahmundry Pushkar Ghat.'}
+          </p>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md"
+            >
+              <span>{isTe ? 'గూగుల్ మ్యాప్స్‌లో తెరవండి' : isHi ? 'गूगल मैप्स में खोलें' : 'Open in Google Maps'}</span>
+              <ExternalLink size={14} />
+            </a>
+
+            <button
+              onClick={() => {
+                setFacility({
+                  id: targetId || 'rajahmundry-vip-ghat',
+                  name: fName || targetId || 'Godavari Pushkara Ghat 1 (VIP Ghat)',
+                  lat: DEFAULT_CENTRE[0],
+                  lng: DEFAULT_CENTRE[1],
+                  address: 'Kotipalli Ghat Road, Rajahmundry',
+                  status: 'verified',
+                  operational_status: 'operational',
+                });
+                setLoadErr('');
+              }}
+              className="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs rounded-xl border border-amber-500/30 transition"
+            >
+              {isTe ? 'రాజమండ్రి ప్రధాన ఘాట్ వద్దకు నావిగేట్ చేయండి' : isHi ? 'राजमहेंद्रवरम मुख्य घाट पर नेविगेट करें' : 'Navigate to Rajahmundry Main Ghat'}
+            </button>
+
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-stone-300 font-bold text-xs rounded-xl transition"
+            >
+              {isTe ? 'వెనక్కి వెళ్ళండి' : isHi ? 'वापस जाएं' : 'Go Back'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -692,7 +734,7 @@ export default function NavigatePage() {
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
               <span className="font-bold text-stone-300 truncate">
-                {userLoc ? (isTe ? 'నా ప్రస్తుత స్థానం' : isHi ? 'मेरा स्थान' : 'My Location') : 'Rajahmundry Centre'}
+                {origin ? (isTe ? 'నా ప్రస్తుత స్థానం' : isHi ? 'मेरा स्थान' : 'My Location') : 'Rajahmundry Centre'}
               </span>
             </div>
             <div className="flex items-center gap-2">

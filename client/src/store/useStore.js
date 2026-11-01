@@ -22,31 +22,45 @@ export const useLanguageStore = create((set) => ({
   },
 }));
 
-function getSystemPrefersDark() {
-  if (typeof window === 'undefined' || !window.matchMedia) return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+function getInitialTheme() {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('civicproof_theme');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.state?.mode === 'dark' || parsed?.state?.mode === 'light') {
+          return parsed.state.mode;
+        }
+      }
+    } catch {}
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+  }
+  return 'light';
 }
 
 export const useThemeStore = create(
   persist(
-    (set, get) => ({
-      mode: 'auto', // 'auto' | 'light' | 'dark'
-      isDark: getSystemPrefersDark(),
-      setMode: (mode) => {
-        const isDark = mode === 'dark' || (mode === 'auto' && getSystemPrefersDark());
-        if (typeof document !== 'undefined') {
-          if (isDark) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+    (set, get) => {
+      const initialMode = getInitialTheme();
+      const initialIsDark = initialMode === 'dark';
+
+      // Immediately apply to DOM
+      if (typeof document !== 'undefined') {
+        if (initialIsDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
         }
-        set({ mode, isDark });
-      },
-      refreshSystemTheme: () => {
-        const { mode } = get();
-        if (mode === 'auto') {
-          const isDark = getSystemPrefersDark();
+      }
+
+      return {
+        mode: initialMode, // 'light' | 'dark' (Auto removed from UI)
+        isDark: initialIsDark,
+        setMode: (mode) => {
+          const nextMode = mode === 'dark' ? 'dark' : 'light';
+          const isDark = nextMode === 'dark';
           if (typeof document !== 'undefined') {
             if (isDark) {
               document.documentElement.classList.add('dark');
@@ -54,10 +68,25 @@ export const useThemeStore = create(
               document.documentElement.classList.remove('dark');
             }
           }
-          set({ isDark });
-        }
-      },
-    }),
+          set({ mode: nextMode, isDark });
+        },
+        toggleTheme: () => {
+          const current = get().mode;
+          const nextMode = current === 'dark' ? 'light' : 'dark';
+          get().setMode(nextMode);
+        },
+        refreshSystemTheme: () => {
+          // If user hasn't explicitly set a preference, follow system
+          try {
+            const raw = localStorage.getItem('civicproof_theme');
+            if (!raw) {
+              const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              get().setMode(prefersDark ? 'dark' : 'light');
+            }
+          } catch {}
+        },
+      };
+    },
     { name: 'civicproof_theme' }
   )
 );

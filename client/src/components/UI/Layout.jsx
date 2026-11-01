@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer, Sun, Moon, Monitor, Compass } from 'lucide-react';
+import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer, Sun, Moon, Compass } from 'lucide-react';
 import { useAuthStore, useLanguageStore, useThemeStore } from '../../store/useStore.js';
 import LanguageSelector from './LanguageSelector.jsx';
 
@@ -9,17 +9,8 @@ export default function Layout() {
   const { t, i18n } = useTranslation();
   const { user, clearAuth } = useAuthStore();
   const { currentLang } = useLanguageStore();
-  const { mode, isDark, setMode } = useThemeStore();
+  const { mode, isDark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
-
-  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
-  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
-
-  const cycleTheme = () => {
-    if (mode === 'auto') setMode('dark');
-    else if (mode === 'dark') setMode('light');
-    else setMode('auto');
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-stone-100 font-sans transition-colors duration-200">
@@ -83,21 +74,22 @@ export default function Layout() {
           {/* Right Header Utilities */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={cycleTheme}
-              className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
-              title={`Theme: ${mode} (${isDark ? 'Dark' : 'Light'})`}
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition active:scale-95"
+              title={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
               aria-label="Toggle theme mode"
             >
-              {mode === 'auto' ? (
-                <Monitor size={14} className="text-amber-300" />
-              ) : isDark ? (
-                <Moon size={14} className="text-amber-300" />
+              {isDark ? (
+                <>
+                  <Sun size={14} className="text-amber-300" />
+                  <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">Light</span>
+                </>
               ) : (
-                <Sun size={14} className="text-amber-300" />
+                <>
+                  <Moon size={14} className="text-amber-200" />
+                  <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">Dark</span>
+                </>
               )}
-              <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">
-                {mode === 'auto' ? 'Auto' : isDark ? 'Dark' : 'Light'}
-              </span>
             </button>
 
             <LanguageSelector />
@@ -164,7 +156,7 @@ export default function Layout() {
       </div>
 
       {/* ── Mobile Sacred Bottom Navigation Bar ── */}
-      <nav className="bg-[#fffdf9] dark:bg-[#0f172a] border-t border-amber-200/80 dark:border-slate-800 flex sm:hidden z-30 shadow-lg px-2 py-1 justify-around">
+      <nav className="bg-[#fffdf9] dark:bg-[#0f172a] border-t border-amber-200/80 dark:border-slate-800 flex sm:hidden z-30 shadow-lg px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] justify-around">
         {[
           { to: '/', icon: Home, label: isTe ? 'హోమ్' : isHi ? 'होम' : 'Home' },
           { to: '/map', icon: Map, label: isTe ? 'సౌకర్యాలు' : isHi ? 'सुविधाएं' : 'Facilities' },

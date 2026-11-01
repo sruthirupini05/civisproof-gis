@@ -424,6 +424,10 @@ export default function ExplorePage() {
                           alt={dest.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/c/cc/River_Godavari_from_arch_bridge_at_Rajahmundry_01.jpg';
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 

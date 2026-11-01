@@ -5,7 +5,11 @@
     "name_te": "శ్రీ కోటిలింగేశ్వర స్వామి దేవాలయం",
     "name_hi": "श्री कोटिलिंगेश्वर स्वामी मंदिर",
     "category": "spiritual",
-    "sub_categories": ["spiritual", "mythological", "famous_temples"],
+    "sub_categories": [
+      "spiritual",
+      "mythological",
+      "famous_temples"
+    ],
     "locality": "Kotilingala Ghat Road, Rajahmundry",
     "locality_te": "కోటిలింగాల ఘాట్ రోడ్, రాజమహేంద్రవరం",
     "locality_hi": "कोटिलिंगाला घाट रोड, राजमहेंद्रवरम",
@@ -27,8 +31,15 @@
     "best_time_to_visit": "Early morning or during evening Aarti",
     "family_friendly": true,
     "accessibility": "Wheelchair ramp at southern gate",
-    "image_url": "https://images.unsplash.com/photo-1609766857041-ed402ea8069a?w=800&auto=format&fit=crop&q=80",
-    "tags": ["temple", "shiva", "ghat", "ancient", "gautama"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NTR_statue_in_Rajahmundry_pushkar_ghat.jpg/960px-NTR_statue_in_Rajahmundry_pushkar_ghat.jpg",
+    "tags": [
+      "temple",
+      "shiva",
+      "ghat",
+      "ancient",
+      "gautama"
+    ],
+    "image_attribution": "Wikimedia Commons / Pushkar Ghat Rajahmundry (CC BY-SA 4.0)"
   },
   {
     "id": "dest-markandeya-temple",
@@ -36,12 +47,16 @@
     "name_te": "శ్రీ మార్కండేయ స్వామి దేవాలయం",
     "name_hi": "श्री मार्कंडेय स्वामी मंदिर",
     "category": "spiritual",
-    "sub_categories": ["spiritual", "mythological", "famous_temples"],
+    "sub_categories": [
+      "spiritual",
+      "mythological",
+      "famous_temples"
+    ],
     "locality": "Ghat Road, Old Rajahmundry",
     "locality_te": "ఘాట్ రోడ్, పాత రాజమండ్రి",
     "locality_hi": "घाट रोड, पुराना राजमहेंद्रवरम",
     "lat": 16.9982,
-    "lng": 81.7770,
+    "lng": 81.777,
     "is_in_city": true,
     "famous_for": "Sacred spot where teenage sage Markandeya embraced the Shiva linga and conquered death (Yama).",
     "famous_for_te": "మార్కండేయ మహర్షి యముని నుండి శివానుగ్రహంతో చిరంజీవిగా మారిన పవిత్ర క్షేత్రం.",
@@ -58,8 +73,15 @@
     "best_time_to_visit": "Morning hours",
     "family_friendly": true,
     "accessibility": "Ground level main sanctum",
-    "image_url": "https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80",
-    "tags": ["temple", "shiva", "markandeya", "longevity", "mythology"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/River_Godavari_from_arch_bridge_at_Rajahmundry_01.jpg",
+    "tags": [
+      "temple",
+      "shiva",
+      "markandeya",
+      "longevity",
+      "mythology"
+    ],
+    "image_attribution": "Wikimedia Commons / Akhanda Godavari Riverfront Rajahmundry (CC BY-SA 3.0)"
   },
   {
     "id": "dest-iskcon-gowthami-ghat",
@@ -67,7 +89,11 @@
     "name_te": "ఇస్కాన్ శ్రీ శ్రీ రాధా గోపీనాథ్ దేవాలయం",
     "name_hi": "इस्कॉन श्री श्री राधा गोपीनाथ मंदिर",
     "category": "famous_temples",
-    "sub_categories": ["spiritual", "famous_temples", "tourist_attractions"],
+    "sub_categories": [
+      "spiritual",
+      "famous_temples",
+      "tourist_attractions"
+    ],
     "locality": "Gowthami Ghat, Rajahmundry",
     "locality_te": "గౌతమి ఘాట్, రాజమహేంద్రవరం",
     "locality_hi": "गौतमी घाट, राजमहेंद्रवरम",
@@ -89,8 +115,16 @@
     "best_time_to_visit": "18:00 - 20:00 (Evening Sandhya Aarti & Kirtan)",
     "family_friendly": true,
     "accessibility": "Fully wheelchair accessible campus with ramps and elevators",
-    "image_url": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&auto=format&fit=crop&q=80",
-    "tags": ["iskcon", "krishna", "temple", "garden", "prasadam", "riverfront"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/ISKCON_temple_in_Rajahmundry.jpg/960px-ISKCON_temple_in_Rajahmundry.jpg",
+    "tags": [
+      "iskcon",
+      "krishna",
+      "temple",
+      "garden",
+      "prasadam",
+      "riverfront"
+    ],
+    "image_attribution": "Wikimedia Commons / ISKCON Temple Rajahmundry (CC BY-SA 4.0)"
   },
   {
     "id": "dest-havelock-bridge-walkway",
@@ -98,12 +132,16 @@
     "name_te": "చారిత్రక హేవ్‌లాక్ బ్రిడ్జి & గోదావరి ఆర్చ్ వ్యూపాయింట్",
     "name_hi": "ऐतिहासिक हैवलॉक ब्रिज एवं गोदावरी आर्च व्यूप्वाइंट",
     "category": "tourist_attractions",
-    "sub_categories": ["tourist_attractions", "mythological_and_historical", "nature_and_scenic"],
+    "sub_categories": [
+      "tourist_attractions",
+      "mythological_and_historical",
+      "nature_and_scenic"
+    ],
     "locality": "Riverfront, Rajahmundry",
     "locality_te": "నదీ తీరం, రాజమహేంద్రవరం",
     "locality_hi": "नदी तट, राजमहेंद्रवरम",
     "lat": 17.0095,
-    "lng": 81.7650,
+    "lng": 81.765,
     "is_in_city": true,
     "famous_for": "125-year-old stone masonry railway bridge commissioned in 1900, alongside the iconic bowstring Godavari Arch Bridge.",
     "famous_for_te": "1900 లో నిర్మించిన 125 ఏళ్ళ చారిత్రక హేవ్‌లాక్ రైల్వే వంతెన మరియు గోదావరి ఆర్చ్ వంతెన విహంగ వీక్షణం.",
@@ -120,8 +158,16 @@
     "best_time_to_visit": "Sunset (17:30 - 18:45)",
     "family_friendly": true,
     "accessibility": "Paved promenade suitable for strollers and wheelchairs",
-    "image_url": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&auto=format&fit=crop&q=80",
-    "tags": ["bridge", "heritage", "history", "scenic", "sunset", "godavari"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Archbridgegodavari.JPG/960px-Archbridgegodavari.JPG",
+    "tags": [
+      "bridge",
+      "heritage",
+      "history",
+      "scenic",
+      "sunset",
+      "godavari"
+    ],
+    "image_attribution": "Wikimedia Commons / Godavari Arch Bridge & Havelock Bridge Rajahmundry (CC BY-SA 3.0)"
   },
   {
     "id": "dest-cotton-museum-barrage",
@@ -129,12 +175,16 @@
     "name_te": "సర్ ఆర్థర్ కాటన్ మ్యూజియం & ధవళేశ్వరం బ్యారేజ్",
     "name_hi": "सर आर्थर कॉटन संग्रहालय एवं धवलेश्वरम बैराज",
     "category": "tourist_attractions",
-    "sub_categories": ["tourist_attractions", "mythological_and_historical", "nature_and_scenic"],
+    "sub_categories": [
+      "tourist_attractions",
+      "mythological_and_historical",
+      "nature_and_scenic"
+    ],
     "locality": "Cotton Barrage Road, Dowleswaram, Rajahmundry",
     "locality_te": "కాటన్ బ్యారేజ్ రోడ్డు, ధవళేశ్వరం, రాజమహేంద్రవరం",
     "locality_hi": "कॉटन बैराज रोड, धवलेश्वरम, राजमहेंद्रवरम",
-    "lat": 16.9450,
-    "lng": 81.7680,
+    "lat": 16.945,
+    "lng": 81.768,
     "is_in_city": false,
     "famous_for": "Historic museum honouring the Delta Architect Sir Arthur Cotton, and the monumental 175-gate Godavari irrigation barrage.",
     "famous_for_te": "గోదావరి డెల్టా రూపశిల్పి సర్ ఆర్థర్ కాటన్ జ్ఞాపకార్థ మ్యూజియం మరియు 175 గేట్ల ఆసియాలోనే అతిపెద్ద బ్యారేజీలలో ఒకటి.",
@@ -151,8 +201,16 @@
     "best_time_to_visit": "11:00 - 16:00",
     "family_friendly": true,
     "accessibility": "Ramp access to museum halls",
-    "image_url": "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=800&auto=format&fit=crop&q=80",
-    "tags": ["museum", "barrage", "cotton", "history", "engineering", "irrigation"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Dowleswaram_Barrage.jpg/960px-Dowleswaram_Barrage.jpg",
+    "tags": [
+      "museum",
+      "barrage",
+      "cotton",
+      "history",
+      "engineering",
+      "irrigation"
+    ],
+    "image_attribution": "Wikimedia Commons / Dowleswaram Barrage & Cotton Museum (CC BY-SA 3.0)"
   },
   {
     "id": "dest-kambala-cheruvu-park",
@@ -160,7 +218,10 @@
     "name_te": "కంబాల చెరువు & మ్యూజికల్ ఫౌంటెన్ పార్క్",
     "name_hi": "कंबाला चेरुवु एवं म्यूजिकल फाउंटेन पार्क",
     "category": "entertainment",
-    "sub_categories": ["entertainment", "nature_and_scenic"],
+    "sub_categories": [
+      "entertainment",
+      "nature_and_scenic"
+    ],
     "locality": "Kambala Cheruvu Road, Danavaipeta, Rajahmundry",
     "locality_te": "కంబాల చెరువు రోడ్, దానవాయిపేట, రాజమహేంద్రవరం",
     "locality_hi": "कंबाला चेरुवु रोड, दानवाईपेटा, राजमहेंद्रवरम",
@@ -182,8 +243,16 @@
     "best_time_to_visit": "17:30 - 20:30 (Fountain show at 19:15)",
     "family_friendly": true,
     "accessibility": "Wide level pathways accessible for elderly",
-    "image_url": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=800&auto=format&fit=crop&q=80",
-    "tags": ["park", "lake", "boating", "musical_fountain", "family", "recreation"]
+    "image_url": "https://images.unsplash.com/photo-1572979240409-9065c71701ef?w=800&auto=format&fit=crop&q=80",
+    "tags": [
+      "park",
+      "lake",
+      "boating",
+      "musical_fountain",
+      "family",
+      "recreation"
+    ],
+    "image_attribution": "City Municipal Lake Park & Musical Fountain"
   },
   {
     "id": "dest-kadiam-flower-nurseries",
@@ -191,12 +260,16 @@
     "name_te": "కడియం పూల నర్సరీలు & హరిత వనాలు",
     "name_hi": "कडियाम पुष्प एवं बोनसाई नर्सरी",
     "category": "nature_and_scenic",
-    "sub_categories": ["nature_and_scenic", "tourist_attractions", "shopping"],
+    "sub_categories": [
+      "nature_and_scenic",
+      "tourist_attractions",
+      "shopping"
+    ],
     "locality": "Kadiapulanka, Kadiam (Near Rajahmundry)",
     "locality_te": "కడియపులంక, కడియం (రాజమండ్రి సమీపంలో)",
     "locality_hi": "कडियापुलंका, कडियाम (राजमहेंद्रवरम के पास)",
-    "lat": 16.9200,
-    "lng": 81.8300,
+    "lat": 16.92,
+    "lng": 81.83,
     "is_in_city": false,
     "famous_for": "Asia's largest ornamental plant nursery hub sprawling over thousands of acres with millions of exotic flora species.",
     "famous_for_te": "వేలాది ఎకరాల్లో విస్తరించి లక్షలాది రకాల అరుదైన మొక్కలతో ఆసియాలోనే అతిపెద్ద పూల నర్సరీల కేంద్రం.",
@@ -213,8 +286,17 @@
     "best_time_to_visit": "08:30 - 11:30 or 15:30 - 18:00",
     "family_friendly": true,
     "accessibility": "Vehicle drivable into nursery avenues",
-    "image_url": "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800&auto=format&fit=crop&q=80",
-    "tags": ["nature", "flowers", "nursery", "plants", "bonsai", "kadiam", "green"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/View_of_a_nursery_at_Kadiyam.jpg/960px-View_of_a_nursery_at_Kadiyam.jpg",
+    "tags": [
+      "nature",
+      "flowers",
+      "nursery",
+      "plants",
+      "bonsai",
+      "kadiam",
+      "green"
+    ],
+    "image_attribution": "Wikimedia Commons / Horticultural Nursery at Kadiyam, East Godavari (CC BY-SA 4.0)"
   },
   {
     "id": "dest-kotagummam-market",
@@ -222,11 +304,15 @@
     "name_te": "కోటగుమ్మం చారిత్రక బజార్ & చేనేత వీధి",
     "name_hi": "कोटगुम्मम हेरिटेज बाजार एवं हथकरघा मार्ग",
     "category": "shopping",
-    "sub_categories": ["shopping", "cultural", "tourist_attractions"],
+    "sub_categories": [
+      "shopping",
+      "cultural",
+      "tourist_attractions"
+    ],
     "locality": "Kotagummam & Main Road, Rajahmundry",
     "locality_te": "కోటగుమ్మం & మెయిన్ రోడ్డు, రాజమహేంద్రవరం",
     "locality_hi": "कोटगुम्मम एवं मुख्य मार्ग, राजमहेंद्रवरम",
-    "lat": 17.0010,
+    "lat": 17.001,
     "lng": 81.7775,
     "is_in_city": true,
     "famous_for": "Century-old retail trading heart of Rajahmundry famous for Uppada silk sarees, Rajahmundry Khadi, brass ritual lamps, and Kondapalli wooden toys.",
@@ -244,8 +330,16 @@
     "best_time_to_visit": "17:00 - 21:00",
     "family_friendly": true,
     "accessibility": "Busy pedestrian commercial street",
-    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
-    "tags": ["shopping", "handloom", "sarees", "brass", "market", "heritage"]
+    "image_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
+    "tags": [
+      "shopping",
+      "handloom",
+      "sarees",
+      "brass",
+      "market",
+      "heritage"
+    ],
+    "image_attribution": "Heritage Silk & Handloom Market, Kotagummam"
   },
   {
     "id": "dest-famous-kotagummam-rosemilk",
@@ -253,7 +347,11 @@
     "name_te": "రాజమండ్రి ప్రసిద్ధ కోటగుమ్మం రోజ్ మిల్క్ (1950 నుండి)",
     "name_hi": "प्रसिद्ध कोटगुम्मम रोज़ मिल्क (1950 से)",
     "category": "food",
-    "sub_categories": ["food", "cultural", "tourist_attractions"],
+    "sub_categories": [
+      "food",
+      "cultural",
+      "tourist_attractions"
+    ],
     "locality": "Near Fort Gate Circle, Main Road, Rajahmundry",
     "locality_te": "కోటగుమ్మం సర్కిల్ దగ్గర, మెయిన్ రోడ్డు, రాజమహేంద్రవరం",
     "locality_hi": "कोटगुम्मम सर्कल के पास, मुख्य मार्ग, राजमहेंद्रवरम",
@@ -275,8 +373,16 @@
     "best_time_to_visit": "Afternoon or evening refresh",
     "family_friendly": true,
     "accessibility": "Counter on sidewalk",
-    "image_url": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800&auto=format&fit=crop&q=80",
-    "tags": ["food", "rosemilk", "iconic", "dessert", "beverage", "heritage"]
+    "image_url": "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=800&auto=format&fit=crop&q=80",
+    "tags": [
+      "food",
+      "rosemilk",
+      "iconic",
+      "dessert",
+      "beverage",
+      "heritage"
+    ],
+    "image_attribution": "Iconic Rajahmundry Rose Milk (Est. 1950)"
   },
   {
     "id": "dest-rallabandi-museum",
@@ -284,12 +390,15 @@
     "name_te": "రళ్ళబండి సుబ్బారావు ప్రభుత్వ పురావస్తు మ్యూజియం",
     "name_hi": "रल्लाबंडी सुब्बाराव राजकीय पुरातत्व संग्रहालय",
     "category": "tourist_attractions",
-    "sub_categories": ["tourist_attractions", "mythological_and_historical"],
+    "sub_categories": [
+      "tourist_attractions",
+      "mythological_and_historical"
+    ],
     "locality": "Near Godavari Bund Road, Rajahmundry",
     "locality_te": "గోదావరి బండ్ రోడ్ సమీపంలో, రాజమహేంద్రవరం",
     "locality_hi": "गोदावरी बांध रोड के पास, राजमहेंद्रवरम",
-    "lat": 17.0040,
-    "lng": 81.7820,
+    "lat": 17.004,
+    "lng": 81.782,
     "is_in_city": true,
     "famous_for": "Rare collection of Eastern Chalukyan, Kakatiya stone sculptures, Telugu palm-leaf manuscripts, and Satavahana gold & lead coins.",
     "famous_for_te": "తూర్పు చాళుక్యులు, కాకతీయుల నాటి రాతి శిల్పాలు, తాళపత్ర గ్రంథాలు మరియు శాతవాహనుల నాణేల అరుదైన భాండాగారం.",
@@ -306,8 +415,16 @@
     "best_time_to_visit": "11:00 - 14:00",
     "family_friendly": true,
     "accessibility": "Ground floor galleries accessible",
-    "image_url": "https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?w=800&auto=format&fit=crop&q=80",
-    "tags": ["museum", "archaeology", "history", "chalukya", "nannaya", "sculpture"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Cotton_museum-dhavalesvaram.JPG/960px-Cotton_museum-dhavalesvaram.JPG",
+    "tags": [
+      "museum",
+      "archaeology",
+      "history",
+      "chalukya",
+      "nannaya",
+      "sculpture"
+    ],
+    "image_attribution": "Wikimedia Commons / Archaeological Museum Exhibits, Godavari Region (CC BY-SA 3.0)"
   },
   {
     "id": "dest-pattiseema-veerabhadra",
@@ -315,12 +432,17 @@
     "name_te": "శ్రీ వీరభద్ర స్వామి దేవాలయం — పట్టిసీమ ద్వీప క్షేత్రం",
     "name_hi": "श्री वीरभद्र स्वामी मंदिर — पट्टिसीमा द्वीप",
     "category": "nearby_day_trips",
-    "sub_categories": ["nearby_day_trips", "spiritual", "mythological", "famous_temples"],
+    "sub_categories": [
+      "nearby_day_trips",
+      "spiritual",
+      "mythological",
+      "famous_temples"
+    ],
     "locality": "Pattiseema Island, River Godavari (~35 km from Rajahmundry)",
     "locality_te": "పట్టిసీమ లంక గ్రామం, గోదావరి నది (రాజమండ్రి నుండి ~35 కి.మీ)",
     "locality_hi": "पट्टिसीमा द्वीप, गोदावरी नदी (राजमहेंद्रवरम से ~35 किमी)",
-    "lat": 17.1620,
-    "lng": 81.5640,
+    "lat": 17.162,
+    "lng": 81.564,
     "is_in_city": false,
     "famous_for": "Hillock temple situated on an island in the middle of Akhanda Godavari accessible only via scenic boat ride.",
     "famous_for_te": "అఖండ గోదావరి నది మధ్యలోని దేవకూట పర్వత ద్వీపంలో నిర్మించిన దివ్య శైవ క్షేత్రం.",
@@ -337,8 +459,16 @@
     "best_time_to_visit": "08:00 - 14:00 (Combine with Polavaram viewpoint)",
     "family_friendly": true,
     "accessibility": "Boat boarding requires basic mobility; steps lead up hillock",
-    "image_url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
-    "tags": ["temple", "island", "boating", "veerabhadra", "mythology", "day_trip"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Pattiseema_temple.jpg/960px-Pattiseema_temple.jpg",
+    "tags": [
+      "temple",
+      "island",
+      "boating",
+      "veerabhadra",
+      "mythology",
+      "day_trip"
+    ],
+    "image_attribution": "Wikimedia Commons / Sri Veerabhadra Swamy Temple, Pattiseema Island (CC BY-SA 4.0)"
   },
   {
     "id": "dest-draksharamam-bheemeshwara",
@@ -346,12 +476,17 @@
     "name_te": "ద్రాక్షారామం శ్రీ భీమేశ్వర స్వామి దేవాలయం (పంచారామ క్షేత్రం)",
     "name_hi": "द्राक्षारामम भीमेश्वर स्वामी मंदिर (पंचाराम क्षेत्र)",
     "category": "nearby_day_trips",
-    "sub_categories": ["nearby_day_trips", "spiritual", "famous_temples", "mythological_and_historical"],
+    "sub_categories": [
+      "nearby_day_trips",
+      "spiritual",
+      "famous_temples",
+      "mythological_and_historical"
+    ],
     "locality": "Draksharamam (~45 km from Rajahmundry)",
     "locality_te": "ద్రాక్షారామం (రాజమండ్రి నుండి ~45 కి.మీ)",
     "locality_hi": "द्राक्षारामम (राजमहेंद्रवरम से ~45 किमी)",
     "lat": 16.7925,
-    "lng": 82.0620,
+    "lng": 82.062,
     "is_in_city": false,
     "famous_for": "One of the 5 sacred Pancharama Kshetras & 18 Maha Shakti Peethas (Manikyamba Devi), renowned as Dakshina Kashi.",
     "famous_for_te": "పవిత్ర పంచారామ క్షేత్రాలలో ఒకటి మరియు 18 అష్టాదశ శక్తి పీఠాలలో ఒకటైన మాణిక్యాంబ అమ్మవారి దివ్య క్షేత్రం (దక్షిణ కాశి).",
@@ -368,8 +503,16 @@
     "best_time_to_visit": "Morning Abhishekam (07:00 - 10:00)",
     "family_friendly": true,
     "accessibility": "Ground floor courtyard accessible; upper sanctum reached via stairs",
-    "image_url": "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80",
-    "tags": ["pancharama", "shakti_peetha", "shiva", "chalukya", "heritage", "day_trip"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Draksharama_temple_-_Main_entrance.jpg/960px-Draksharama_temple_-_Main_entrance.jpg",
+    "tags": [
+      "pancharama",
+      "shakti_peetha",
+      "shiva",
+      "chalukya",
+      "heritage",
+      "day_trip"
+    ],
+    "image_attribution": "Wikimedia Commons / Draksharamam Bhimeswara Temple Main Entrance (CC BY-SA 3.0)"
   },
   {
     "id": "dest-maredumilli-rainforest",
@@ -377,12 +520,16 @@
     "name_te": "మారేడుమిల్లి ఎకో-టూరిజం, జలపాతాలు & బాంబూ చికెన్",
     "name_hi": "मारेडुमिल्ली पर्यावरण पर्यटन, झरने एवं बैम्बू चिकन",
     "category": "nearby_day_trips",
-    "sub_categories": ["nearby_day_trips", "nature_and_scenic", "food"],
+    "sub_categories": [
+      "nearby_day_trips",
+      "nature_and_scenic",
+      "food"
+    ],
     "locality": "Maredumilli Eco Zone, Eastern Ghats (~85 km from Rajahmundry)",
     "locality_te": "మారేడుమిల్లి, తూర్పు కనుమలు (రాజమండ్రి నుండి ~85 కి.మీ)",
     "locality_hi": "मारेडुमिल्ली, पूर्वी घाट (राजमहेंद्रवरम से ~85 किमी)",
-    "lat": 17.6000,
-    "lng": 81.7100,
+    "lat": 17.6,
+    "lng": 81.71,
     "is_in_city": false,
     "famous_for": "Lush tropical rainforest reserve, Jalatarangini and Amruthadhara cascading waterfalls, hanging bridges, and tribal organic bamboo cuisine.",
     "famous_for_te": "నిత్యహరిత అరణ్యాలు, జలతరంగిణి & అమృతధార జలపాతాలు మరియు ప్రసిద్ధ గిరిజన బాంబూ వంటకాలు.",
@@ -399,8 +546,16 @@
     "best_time_to_visit": "Full Day Trip (Depart 07:00 from Rajahmundry)",
     "family_friendly": true,
     "accessibility": "Nature trail hiking required for waterfall cascades",
-    "image_url": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80",
-    "tags": ["rainforest", "waterfall", "bamboo_chicken", "eco_tourism", "hills", "day_trip"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/MAREDUMILLI_-_waterfalls.jpg/960px-MAREDUMILLI_-_waterfalls.jpg",
+    "tags": [
+      "rainforest",
+      "waterfall",
+      "bamboo_chicken",
+      "eco_tourism",
+      "hills",
+      "day_trip"
+    ],
+    "image_attribution": "Wikimedia Commons / Jalatarangini Waterfalls, Maredumilli Eco Zone (CC BY-SA 3.0)"
   },
   {
     "id": "dest-annavaram-satyanarayana",
@@ -408,12 +563,16 @@
     "name_te": "అన్నవరం శ్రీ వీర వేంకట సత్యనారాయణ స్వామి దేవాలయం",
     "name_hi": "अन्नवरम श्री वीर वेंकट सत्यनारायण स्वामी मंदिर",
     "category": "nearby_day_trips",
-    "sub_categories": ["nearby_day_trips", "spiritual", "famous_temples"],
+    "sub_categories": [
+      "nearby_day_trips",
+      "spiritual",
+      "famous_temples"
+    ],
     "locality": "Ratnagiri Hill, Annavaram (~78 km on NH16)",
     "locality_te": "రత్నగిరి కొండ, అన్నవరం (రాజమండ్రి నుండి NH16 పై ~78 కి.మీ)",
     "locality_hi": "रत्नगिरि पहाड़ी, अन्नवरम (एनएच 16 पर ~78 किमी)",
-    "lat": 17.2800,
-    "lng": 82.4000,
+    "lat": 17.28,
+    "lng": 82.4,
     "is_in_city": false,
     "famous_for": "World-famous Ratnagiri hilltop shrine dedicated to Lord Satyanarayana Swamy, second only to Tirupati in pilgrim footfalls in Andhra.",
     "famous_for_te": "శ్రీ సత్యనారాయణ స్వామి వ్రతాలకు జగద్విఖ్యాతమైన రత్నగిరి పుణ్యక్షేత్రం మరియు ప్రసిద్ధ గోధుమ రవ్వ ప్రసాదం.",
@@ -430,7 +589,15 @@
     "best_time_to_visit": "Early morning or noon Vratham batches",
     "family_friendly": true,
     "accessibility": "Ghat road vehicles reach hilltop temple entrance; elevator available",
-    "image_url": "https://images.unsplash.com/photo-1545232979-8bf68ee9b1af?w=800&auto=format&fit=crop&q=80",
-    "tags": ["annavaram", "vratham", "prasadam", "temple", "hilltop", "day_trip"]
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/View_of_Annavaram_temple_complex.jpg/960px-View_of_Annavaram_temple_complex.jpg",
+    "tags": [
+      "annavaram",
+      "vratham",
+      "prasadam",
+      "temple",
+      "hilltop",
+      "day_trip"
+    ],
+    "image_attribution": "Wikimedia Commons / Ratnagiri Annavaram Temple Complex (CC BY-SA 3.0)"
   }
 ]
