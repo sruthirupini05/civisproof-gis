@@ -22,20 +22,36 @@ const CityQRPage = lazy(() => import('./pages/CityQRPage.jsx'));
 export default function App() {
   useEffect(() => {
     // 1. Preheat offline IndexedDB storage with all facility records on first load
-    async function preheatOffline() {
-      try {
-        await cacheAllFacilities(fallbackFacilities);
-        if (navigator.onLine) {
-          const fresh = await facilitiesAPI.list({});
-          if (fresh && fresh.length > 0) {
-            await cacheAllFacilities(fresh);
-          }
-        }
-      } catch (e) {
-        console.warn('Offline storage preheat error:', e);
+    
+async function preheatOffline() {
+  try {
+    const fallback = Array.isArray(fallbackFacilities)
+      ? fallbackFacilities
+      : Array.isArray(fallbackFacilities?.facilities)
+        ? fallbackFacilities.facilities
+        : [];
+
+    await cacheAllFacilities(fallback);
+
+    if (navigator.onLine) {
+      const response = await facilitiesAPI.list({});
+      const fresh = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.facilities)
+          ? response.facilities
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
+
+      if (fresh.length > 0) {
+        await cacheAllFacilities(fresh);
       }
     }
-    preheatOffline();
+  } catch (e) {
+    console.warn('Offline storage preheat error:', e);
+  }
+}
+
 
     // 2. Set up listener to auto-sync offline drafts as soon as user regains connectivity
     setupOnlineSync();
