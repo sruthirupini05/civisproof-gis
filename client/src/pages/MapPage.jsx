@@ -19,6 +19,8 @@ import StatusBadge from '../components/UI/StatusBadge.jsx';
 import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import { useLanguageStore } from '../store/useStore.js';
 
+const DEFAULT_CENTER = [16.9995, 81.7785];
+
 const CATEGORY_COLORS = {
   ghat: '#2563eb',
   toilet: '#9333ea',
@@ -26,6 +28,49 @@ const CATEGORY_COLORS = {
   medical: '#e11d48',
   shelter: '#d97706',
 };
+
+function hasValidCoordinates(lat, lng) {
+  if (
+    lat === null ||
+    lat === undefined ||
+    lng === null ||
+    lng === undefined ||
+    String(lat).trim() === '' ||
+    String(lng).trim() === ''
+  ) {
+    return false;
+  }
+
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+
+  return (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+}
+
+function normalizeFacilities(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.facilities)) return response.facilities;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.facilities)) {
+    return response.data.facilities;
+  }
+  return [];
+}
+
+function isValidFacility(facility) {
+  return (
+    facility &&
+    typeof facility === 'object' &&
+    typeof facility.name === 'string'
+  );
+}
 
 function createCategoryIcon(category, isSelected = false) {
   const color = CATEGORY_COLORS[category] || '#475569';
@@ -45,7 +90,6 @@ function createCategoryIcon(category, isSelected = false) {
         justify-content: center;
         border: 2px solid white;
         box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-        transition: transform 0.2s;
       ">
         <div style="
           transform: rotate(45deg);
@@ -85,43 +129,17 @@ function MapController({ center, zoom }) {
     if (
       Array.isArray(center) &&
       center.length === 2 &&
-      center.every(Number.isFinite)
+      hasValidCoordinates(center[0], center[1])
     ) {
-      map.flyTo(center, zoom || 15, { duration: 1.2 });
+      map.flyTo(
+        [Number(center[0]), Number(center[1])],
+        zoom || 15,
+        { duration: 1.2 }
+      );
     }
   }, [center, zoom, map]);
 
   return null;
-}
-
-function normalizeFacilities(response) {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (Array.isArray(response?.facilities)) {
-    return response.facilities;
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data;
-  }
-
-  if (Array.isArray(response?.data?.facilities)) {
-    return response.data.facilities;
-  }
-
-  return [];
-}
-
-function isValidFacility(facility) {
-  return (
-    facility &&
-    typeof facility === 'object' &&
-    typeof facility.name === 'string' &&
-    Number.isFinite(Number(facility.lat)) &&
-    Number.isFinite(Number(facility.lng))
-  );
 }
 
 export default function MapPage() {
@@ -134,7 +152,7 @@ export default function MapPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacility, setSelectedFacility] = useState(null);
-  const [mapCenter, setMapCenter] = useState([16.9995, 81.7785]);
+  const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [userLocation, setUserLocation] = useState(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState(null);
@@ -143,31 +161,36 @@ export default function MapPage() {
     let cancelled = false;
 
     async function loadData() {
-      try {
-        let data = [];
+      let data = [];
 
+      try {
         if (navigator.onLine) {
           try {
             const response = await facilitiesAPI.list({});
             data = normalizeFacilities(response).filter(isValidFacility);
 
             if (data.length > 0) {
-              await cacheAllFacilities(data);
+              try {
+                await cacheAllFacilities(data);
+              } catch (error) {
+                console.warn('Could not cache network facilities:', error);
+              }
             }
-          } catch (netErr) {
+          } catch (error) {
             console.warn(
               'Network API fetch failed, falling back to cache:',
-              netErr
+              error
             );
           }
         }
 
         if (data.length === 0) {
           try {
-            const cached = await getCachedFacilities();
-            data = normalizeFacilities(cached).filter(isValidFacility);
-          } catch (cacheErr) {
-            console.warn('Failed to load cached facilities:', cacheErr);
+            data = normalizeFacilities(
+              await getCachedFacilities()
+            ).filter(isValidFacility);
+          } catch (error) {
+            console.warn('Could not load cached facilities:', error);
           }
         }
 
@@ -178,8 +201,8 @@ export default function MapPage() {
 
           try {
             await cacheAllFacilities(data);
-          } catch (cacheErr) {
-            console.warn('Failed to cache fallback facilities:', cacheErr);
+          } catch (error) {
+            console.warn('Could not cache fallback facilities:', error);
           }
         }
 
@@ -188,11 +211,11 @@ export default function MapPage() {
         setFacilities(data);
 
         const focusId = searchParams.get('focus');
-        const lat = parseFloat(searchParams.get('lat'));
-        const lng = parseFloat(searchParams.get('lng'));
+        const lat = searchParams.get('lat');
+        const lng = searchParams.get('lng');
 
-        if (focusId && Number.isFinite(lat) && Number.isFinite(lng)) {
-          setMapCenter([lat, lng]);
+        if (focusId && hasValidCoordinates(lat, lng)) {
+          setMapCenter([Number(lat), Number(lng)]);
 
           const found = data.find(
             (facility) =>
@@ -200,33 +223,31 @@ export default function MapPage() {
               String(facility.qr_token) === focusId
           );
 
-          if (found) {
-            setSelectedFacility(found);
-          }
+          if (found) setSelectedFacility(found);
         }
       } catch (error) {
-        console.warn('Failed to load facilities:', error);
+        console.error('Failed to load facilities:', error);
+
+        if (cancelled) return;
 
         try {
           const cached = normalizeFacilities(
             await getCachedFacilities()
           ).filter(isValidFacility);
 
-          if (!cancelled) {
-            const fallback = normalizeFacilities(fallbackFacilities).filter(
-              isValidFacility
-            );
+          const fallback = normalizeFacilities(fallbackFacilities).filter(
+            isValidFacility
+          );
 
+          if (!cancelled) {
             setFacilities(cached.length > 0 ? cached : fallback);
           }
         } catch (fallbackError) {
-          console.error('Unable to load facility data:', fallbackError);
+          console.error('Failed to load cached or fallback data:', fallbackError);
 
           if (!cancelled) {
             setFacilities(
-              normalizeFacilities(fallbackFacilities).filter(
-                isValidFacility
-              )
+              normalizeFacilities(fallbackFacilities).filter(isValidFacility)
             );
           }
         }
@@ -257,6 +278,12 @@ export default function MapPage() {
           position.coords.longitude,
         ];
 
+        if (!hasValidCoordinates(coords[0], coords[1])) {
+          setLocationError(t('map.locationError'));
+          setLocating(false);
+          return;
+        }
+
         setUserLocation(coords);
         setMapCenter(coords);
         setLocating(false);
@@ -279,17 +306,28 @@ export default function MapPage() {
 
       const name = facility.name || '';
       const nameTe = facility.name_te || '';
+      const nameHi = facility.name_hi || '';
       const address = facility.address || '';
 
       const matchSearch =
         !query ||
         name.toLowerCase().includes(query) ||
-        nameTe.includes(query) ||
+        nameTe.toLowerCase().includes(query) ||
+        nameHi.toLowerCase().includes(query) ||
         address.toLowerCase().includes(query);
 
       return matchCategory && matchSearch;
     });
   }, [facilities, activeCategory, searchQuery]);
+
+  // Only facilities with valid coordinates are rendered as map markers.
+  const mappableFacilities = useMemo(
+    () =>
+      filteredFacilities.filter((facility) =>
+        hasValidCoordinates(facility.lat, facility.lng)
+      ),
+    [filteredFacilities]
+  );
 
   function getFacilityDisplayName(facility) {
     const lang = (
@@ -298,13 +336,8 @@ export default function MapPage() {
       'te'
     ).slice(0, 2);
 
-    if (lang === 'te' && facility.name_te) {
-      return facility.name_te;
-    }
-
-    if (lang === 'hi' && facility.name_hi) {
-      return facility.name_hi;
-    }
+    if (lang === 'te' && facility.name_te) return facility.name_te;
+    if (lang === 'hi' && facility.name_hi) return facility.name_hi;
 
     return facility.name || 'Unnamed facility';
   }
@@ -321,12 +354,12 @@ export default function MapPage() {
   const categoryCounts = useMemo(() => {
     const counts = { all: facilities.length };
 
-    for (const facility of facilities) {
+    facilities.forEach((facility) => {
       if (facility.category) {
         counts[facility.category] =
           (counts[facility.category] || 0) + 1;
       }
-    }
+    });
 
     return counts;
   }, [facilities]);
@@ -368,7 +401,6 @@ export default function MapPage() {
               }`}
             >
               <span>{t(category.label)}</span>
-
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                   activeCategory === category.id
@@ -401,7 +433,6 @@ export default function MapPage() {
       {locationError && (
         <div className="absolute top-24 left-4 right-4 sm:left-6 sm:max-w-md z-10 bg-amber-500 text-white text-xs p-2.5 rounded-xl shadow-md flex items-center justify-between">
           <span>{locationError}</span>
-
           <button
             onClick={() => setLocationError(null)}
             className="ml-2 font-bold"
@@ -414,7 +445,7 @@ export default function MapPage() {
 
       <div className="flex-1 w-full h-full">
         <MapContainer
-          center={mapCenter}
+          center={DEFAULT_CENTER}
           zoom={14}
           zoomControl={false}
           className="w-full h-full"
@@ -427,10 +458,7 @@ export default function MapPage() {
           <MapController center={mapCenter} />
 
           {userLocation && (
-            <Marker
-              position={userLocation}
-              icon={userLocationIcon}
-            >
+            <Marker position={userLocation} icon={userLocationIcon}>
               <Popup>
                 <div className="text-xs font-semibold">
                   {t('map.yourLocation')}
@@ -439,9 +467,10 @@ export default function MapPage() {
             </Marker>
           )}
 
-          {filteredFacilities.map((facility) => {
+          {mappableFacilities.map((facility) => {
             const lat = Number(facility.lat);
             const lng = Number(facility.lng);
+
             const isSelected =
               String(selectedFacility?.id) === String(facility.id);
 
@@ -449,10 +478,7 @@ export default function MapPage() {
               <Marker
                 key={facility.id ?? `${lat}-${lng}-${facility.name}`}
                 position={[lat, lng]}
-                icon={createCategoryIcon(
-                  facility.category,
-                  isSelected
-                )}
+                icon={createCategoryIcon(facility.category, isSelected)}
                 eventHandlers={{
                   click: () => {
                     setSelectedFacility(facility);
@@ -495,10 +521,7 @@ export default function MapPage() {
 
           <div className="flex flex-wrap gap-1.5 items-center">
             <StatusBadge status={selectedFacility.status} />
-
-            <StatusBadge
-              status={selectedFacility.operational_status}
-            />
+            <StatusBadge status={selectedFacility.operational_status} />
 
             {selectedFacility.is_verified ? (
               <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -515,10 +538,7 @@ export default function MapPage() {
             <button
               onClick={() =>
                 navigate(
-                  `/facility/${
-                    selectedFacility.qr_token ??
-                    selectedFacility.id
-                  }`
+                  `/facility/${selectedFacility.qr_token ?? selectedFacility.id}`
                 )
               }
               className="bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
@@ -530,10 +550,7 @@ export default function MapPage() {
             <button
               onClick={() =>
                 navigate(
-                  `/navigate/${
-                    selectedFacility.qr_token ??
-                    selectedFacility.id
-                  }`
+                  `/navigate/${selectedFacility.qr_token ?? selectedFacility.id}`
                 )
               }
               className="bg-[#1e3a5f] hover:bg-[#15294a] text-white rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm"
