@@ -6,9 +6,14 @@ import App from './App.jsx';
 import './i18n/i18n.js';
 import './index.css';
 
+const basename =
+  import.meta.env.BASE_URL === '/civisproof-gis/'
+    ? '/civisproof-gis'
+    : '/';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/civisproof-gis">
+    <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>
