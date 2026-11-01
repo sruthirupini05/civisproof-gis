@@ -4,16 +4,19 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+const base = isGitHubPages ? '/civisproof-gis/' : '/';
+
 export default defineConfig({
-  base: '/civisproof-gis/',
+  base,
 
   plugins: [
     react(),
     tailwindcss(),
 
     VitePWA({
-      base: '/civisproof-gis/',
-      scope: '/civisproof-gis/',
+      base,
+      scope: base,
       registerType: 'autoUpdate',
 
       includeAssets: [
@@ -51,7 +54,7 @@ export default defineConfig({
           '**/*.{js,css,html,ico,png,svg,woff2}',
         ],
 
-        navigateFallback: 'index.html',
+        navigateFallback: `${base}index.html`,
         navigateFallbackDenylist: [/^\/api/],
 
         runtimeCaching: [
@@ -66,7 +69,6 @@ export default defineConfig({
               },
             },
           },
-
           {
             urlPattern: /https:\/\/tile\.openstreetmap\.org\//,
             handler: 'CacheFirst',
@@ -81,7 +83,6 @@ export default defineConfig({
               },
             },
           },
-
           {
             urlPattern: /https:\/\/router\.project-osrm\.org\//,
             handler: 'NetworkFirst',
