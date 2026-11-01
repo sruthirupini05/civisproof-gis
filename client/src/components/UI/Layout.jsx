@@ -1,7 +1,7 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Map, QrCode, LayoutDashboard, LogIn, LogOut, Printer } from 'lucide-react';
+import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer } from 'lucide-react';
 import { useAuthStore } from '../../store/useStore.js';
 import LanguageSelector from './LanguageSelector.jsx';
 
@@ -9,121 +9,118 @@ export default function Layout() {
   const { t } = useTranslation();
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide header and bottom nav on dedicated full-screen navigation mode if desired
+  const isNavigateView = location.pathname.startsWith('/navigate');
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Header */}
-      <header className="bg-[#1e3a5f] text-white shadow-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center font-bold text-[#1e3a5f] text-sm shadow-sm">
-              CP
+    <div className="min-h-screen flex flex-col bg-[#fffdf9] text-stone-900 font-sans">
+      {/* ── Sacred Pushkaram Header ── */}
+      <header className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white shadow-md sticky top-0 z-40 border-b border-amber-500/20">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
+          {/* Logo & Pushkaram Crest */}
+          <NavLink to="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 bg-gradient-to-br from-amber-300 to-amber-500 rounded-2xl flex items-center justify-center font-black text-[#881337] text-lg shadow-md border border-amber-200 group-hover:scale-105 transition">
+              🛕
             </div>
             <div>
-              <div className="font-bold text-sm leading-tight">{t('app.name')}</div>
-              <div className="text-[11px] text-blue-200 hidden sm:block">{t('app.subtitle')}</div>
+              <div className="font-extrabold text-sm md:text-base leading-tight tracking-tight text-white flex items-center gap-1.5">
+                <span>Godavari Pushkaralu 2027</span>
+                <span className="text-[11px] font-bold text-amber-300 bg-black/20 px-1.5 py-0.5 rounded-full hidden sm:inline">
+                  GIS
+                </span>
+              </div>
+              <div className="text-[11px] text-amber-200/90 font-medium hidden sm:block">
+                CivicProof — Facilities & Pilgrimage Navigation
+              </div>
             </div>
           </NavLink>
-          <div className="flex items-center gap-2">
+
+          {/* Right Header Utilities */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSelector />
+
             <NavLink
               to="/city-qr"
-              className="flex items-center gap-1.5 text-xs bg-amber-400 text-[#1e3a5f] hover:bg-amber-300 font-bold px-2.5 py-1.5 rounded-xl transition shadow-xs"
+              className="flex items-center gap-1 text-xs bg-amber-400 hover:bg-amber-300 text-[#7f1d1d] font-bold px-3 py-1.5 rounded-xl transition shadow-xs"
             >
-              <QrCode size={14} />
-              <span className="hidden sm:inline">{t('nav.cityQR')}</span>
+              <QrCode size={13} />
+              <span className="hidden sm:inline">City QR</span>
             </NavLink>
+
             {user?.role === 'admin' && (
               <NavLink
                 to="/admin/qr"
                 title="Print QR Codes"
-                className="hidden md:flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded transition"
+                className="hidden md:flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
               >
-                <Printer size={14} />
+                <Printer size={13} />
                 <span>QR Labels</span>
               </NavLink>
             )}
+
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-blue-200 hidden md:inline">
-                  {user.username} ({user.role})
+                <span className="text-xs text-amber-200 hidden md:inline">
+                  {user.username}
                 </span>
                 <button
                   onClick={() => {
                     clearAuth();
                     navigate('/');
                   }}
-                  className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded transition"
+                  className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
                 >
-                  <LogOut size={14} />
-                  <span className="hidden sm:inline">{t('nav.logout')}</span>
+                  <LogOut size={13} />
+                  <span className="hidden sm:inline">Logout</span>
                 </button>
               </div>
             ) : (
               <NavLink
                 to="/login"
-                className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded transition"
+                className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
               >
-                <LogIn size={14} />
-                <span className="hidden sm:inline">{t('nav.login')}</span>
+                <LogIn size={13} />
+                <span className="hidden sm:inline">Login</span>
               </NavLink>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Desktop sidebar */}
-        <aside className="hidden sm:flex flex-col w-16 bg-white border-r border-slate-200 items-center py-4 gap-4 z-20">
-          {[
-            { to: '/', icon: Map, label: 'nav.map' },
-            { to: '/scan', icon: QrCode, label: 'nav.scan' },
-            { to: '/dashboard', icon: LayoutDashboard, label: 'nav.dashboard' },
-            ...(user?.role === 'admin' ? [{ to: '/admin/qr', icon: Printer, label: 'facility.downloadQR' }] : []),
-          ].map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              title={t(label, { defaultValue: label })}
-              className={({ isActive }) =>
-                `w-11 h-11 flex items-center justify-center rounded-xl transition ${
-                  isActive ? 'bg-[#1e3a5f] text-white shadow' : 'text-slate-500 hover:bg-slate-100'
-                }`
-              }
-            >
-              <Icon size={20} />
-            </NavLink>
-          ))}
-        </aside>
-
-        {/* Content View */}
+      {/* ── Main View Container ── */}
+      <div className="flex-1 flex overflow-hidden relative">
         <main className="flex-1 overflow-auto relative">
           <Outlet />
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="bg-white border-t border-slate-200 flex sm:hidden z-30 shadow-lg">
+      {/* ── Mobile Sacred Bottom Navigation Bar ── */}
+      <nav className="bg-[#fffdf9] border-t border-amber-200/80 flex sm:hidden z-30 shadow-lg px-2 py-1 justify-around">
         {[
-          { to: '/', icon: Map, label: 'nav.map' },
-          { to: '/scan', icon: QrCode, label: 'nav.scan' },
-          { to: '/dashboard', icon: LayoutDashboard, label: 'nav.dashboard' },
-          ...(user?.role === 'admin' ? [{ to: '/admin/qr', icon: Printer, label: 'facility.downloadQR' }] : []),
+          { to: '/', icon: Home, label: 'Home' },
+          { to: '/map', icon: Map, label: 'Map' },
+          { to: '/scan', icon: QrCode, label: 'Scan QR' },
+          { to: '/saved', icon: Heart, label: 'Saved' },
+          { to: '/help', icon: HelpCircle, label: 'Help' },
         ].map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center py-2 text-xs transition ${
-                isActive ? 'text-[#1e3a5f] font-semibold' : 'text-slate-400'
+              `flex-1 flex flex-col items-center py-1 text-[11px] font-semibold transition ${
+                isActive
+                  ? 'text-[#991b1b] scale-105'
+                  : 'text-stone-400 hover:text-stone-600'
               }`
             }
           >
-            <Icon size={20} />
-            <span className="mt-0.5">{t(label, { defaultValue: label })}</span>
+            <div className="p-1 rounded-full">
+              <Icon size={19} className="stroke-[2.2]" />
+            </div>
+            <span className="mt-0.5">{label}</span>
           </NavLink>
         ))}
       </nav>

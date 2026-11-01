@@ -45,44 +45,38 @@ export default function OfflineIndicator() {
 
   return (
     <div
-      className={`px-4 py-2 flex items-center justify-between text-xs font-medium z-40 transition ${
+      className={`px-4 py-2 flex items-center justify-between text-xs font-bold z-50 transition shadow-md ${
         !isOnline
-          ? 'bg-amber-500 text-white'
-          : syncResult
-          ? 'bg-emerald-600 text-white'
-          : 'bg-blue-600 text-white'
+          ? 'bg-gradient-to-r from-amber-600 to-[#991b1b] text-white'
+          : 'bg-emerald-700 text-white'
       }`}
     >
-      <div className="flex items-center gap-2">
-        {!isOnline ? (
-          <>
-            <WifiOff size={15} />
-            <span>{t('offline.offlineTitle')}: {t('offline.offlineMessage')}</span>
-          </>
-        ) : syncResult ? (
-          <>
-            <CheckCircle size={15} />
-            <span>
-              {t('sync.synced')} ({syncResult.synced} items synced)
-            </span>
-          </>
-        ) : (
-          <>
-            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            <span>{t('sync.pendingItems', { count: pendingInspections.length })}</span>
-          </>
+      <div className="flex items-center gap-2 max-w-7xl mx-auto w-full justify-between">
+        <div className="flex items-center gap-2">
+          {!isOnline ? (
+            <>
+              <WifiOff size={15} className="animate-pulse" />
+              <span>Offline Mode — Showing downloaded maps &amp; cached facilities</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle size={15} />
+              <span>Online — Synced with live civic registry</span>
+            </>
+          )}
+        </div>
+
+        {pendingInspections.length > 0 && isOnline && (
+          <button
+            onClick={triggerManualSync}
+            disabled={syncing}
+            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            <span>Sync ({pendingInspections.length})</span>
+          </button>
         )}
       </div>
-
-      {isOnline && pendingInspections.length > 0 && (
-        <button
-          onClick={triggerManualSync}
-          disabled={syncing}
-          className="bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded text-[11px] font-semibold transition disabled:opacity-50"
-        >
-          {syncing ? t('sync.syncing') : t('sync.syncNow')}
-        </button>
-      )}
     </div>
   );
 }

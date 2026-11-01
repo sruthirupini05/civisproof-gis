@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -11,134 +10,91 @@ import {
   Navigation,
   Info,
   X,
+  ArrowLeft,
+  Layers,
+  MapPin,
+  Clock,
 } from 'lucide-react';
 import { facilitiesAPI } from '../services/api.js';
 import { cacheAllFacilities, getCachedFacilities } from '../services/db.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
 import StatusBadge from '../components/UI/StatusBadge.jsx';
-import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
 import { useLanguageStore } from '../store/useStore.js';
 
-const DEFAULT_CENTER = [16.9995, 81.7785];
+const DEFAULT_CENTER = [16.9948, 81.7798]; // Rajahmundry Main Ghat
 
-const CATEGORY_COLORS = {
-  ghat: '#2563eb',
-  toilet: '#9333ea',
-  water: '#0891b2',
-  medical: '#e11d48',
-  shelter: '#d97706',
+const CATEGORY_META = {
+  toilet: { label: 'Toilets', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
+  water: { label: 'Water', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
+  medical: { label: 'Medical', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
+  ghat: { label: 'Ghats', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
+  shelter: { label: 'Shelters', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
+  parking: { label: 'Parking', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
 };
 
 function hasValidCoordinates(lat, lng) {
-  if (
-    lat === null ||
-    lat === undefined ||
-    lng === null ||
-    lng === undefined ||
-    String(lat).trim() === '' ||
-    String(lng).trim() === ''
-  ) {
-    return false;
-  }
-
-  const latitude = Number(lat);
-  const longitude = Number(lng);
-
-  return (
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    latitude >= -90 &&
-    latitude <= 90 &&
-    longitude >= -180 &&
-    longitude <= 180
-  );
+  if (lat == null || lng == null || String(lat).trim() === '' || String(lng).trim() === '') return false;
+  const latitude = Number(lat), longitude = Number(lng);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) &&
+    latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
 function normalizeFacilities(response) {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.facilities)) return response.facilities;
   if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.data?.facilities)) {
-    return response.data.facilities;
-  }
   return [];
 }
 
-function isValidFacility(facility) {
-  return (
-    facility &&
-    typeof facility === 'object' &&
-    typeof facility.name === 'string'
-  );
-}
-
-function createCategoryIcon(category, isSelected = false) {
-  const color = CATEGORY_COLORS[category] || '#475569';
+function createPushkaramPin(category, isSelected = false) {
+  const meta = CATEGORY_META[category] || { icon: '📍', color: '#991b1b' };
   const size = isSelected ? 38 : 30;
 
   return L.divIcon({
-    className: 'custom-facility-pin',
+    className: '',
     html: `
       <div style="
-        background-color: ${color};
         width: ${size}px;
         height: ${size}px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
+        background: ${isSelected ? '#991b1b' : meta.color};
+        color: white;
+        border: 2.5px solid white;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        font-size: ${isSelected ? '18px' : '14px'};
+        transition: transform 0.2s;
+        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
       ">
-        <div style="
-          transform: rotate(45deg);
-          width: 8px;
-          height: 8px;
-          background: white;
-          border-radius: 50%;
-        "></div>
+        ${meta.icon}
       </div>
     `,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
-const userLocationIcon = L.divIcon({
-  className: 'user-location-pin',
+const userBeaconIcon = L.divIcon({
+  className: '',
   html: `
-    <div style="
-      width: 18px;
-      height: 18px;
-      background: #2563eb;
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3);
-    "></div>
+    <div style="position:relative;width:24px;height:24px;">
+      <div style="position:absolute;inset:0;background:rgba(239,68,68,0.25);border-radius:50%;animation:pulse-ring 1.8s infinite;"></div>
+      <div style="position:absolute;inset:4px;background:#dc2626;border:2.5px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>
+    </div>
   `,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
 });
 
 function MapController({ center, zoom }) {
   const map = useMap();
-
   useEffect(() => {
-    if (
-      Array.isArray(center) &&
-      center.length === 2 &&
-      hasValidCoordinates(center[0], center[1])
-    ) {
-      map.flyTo(
-        [Number(center[0]), Number(center[1])],
-        zoom || 15,
-        { duration: 1.2 }
-      );
+    if (Array.isArray(center) && center.length === 2 && hasValidCoordinates(center[0], center[1])) {
+      map.flyTo([Number(center[0]), Number(center[1])], zoom || 15, { duration: 1 });
     }
   }, [center, zoom, map]);
-
   return null;
 }
 
@@ -149,340 +105,201 @@ export default function MapPage() {
   const { currentLang } = useLanguageStore();
 
   const [facilities, setFacilities] = useState([]);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'all');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [userLocation, setUserLocation] = useState(null);
   const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState(null);
 
+  // Load facilities
   useEffect(() => {
-    let cancelled = false;
-
     async function loadData() {
       let data = [];
-
       try {
         if (navigator.onLine) {
           try {
-            const response = await facilitiesAPI.list({});
-            data = normalizeFacilities(response).filter(isValidFacility);
-
-            if (data.length > 0) {
-              try {
-                await cacheAllFacilities(data);
-              } catch (error) {
-                console.warn('Could not cache network facilities:', error);
-              }
-            }
-          } catch (error) {
-            console.warn(
-              'Network API fetch failed, falling back to cache:',
-              error
-            );
-          }
+            const res = await facilitiesAPI.list({});
+            data = normalizeFacilities(res);
+            if (data.length > 0) await cacheAllFacilities(data);
+          } catch {}
         }
-
         if (data.length === 0) {
           try {
-            data = normalizeFacilities(
-              await getCachedFacilities()
-            ).filter(isValidFacility);
-          } catch (error) {
-            console.warn('Could not load cached facilities:', error);
-          }
+            data = normalizeFacilities(await getCachedFacilities());
+          } catch {}
         }
-
         if (data.length === 0) {
-          data = normalizeFacilities(fallbackFacilities).filter(
-            isValidFacility
-          );
-
-          try {
-            await cacheAllFacilities(data);
-          } catch (error) {
-            console.warn('Could not cache fallback facilities:', error);
-          }
+          data = normalizeFacilities(fallbackFacilities);
         }
+      } catch {
+        data = normalizeFacilities(fallbackFacilities);
+      }
+      setFacilities(data);
 
-        if (cancelled) return;
-
-        setFacilities(data);
-
-        const focusId = searchParams.get('focus');
-        const lat = searchParams.get('lat');
-        const lng = searchParams.get('lng');
-
-        if (focusId && hasValidCoordinates(lat, lng)) {
-          setMapCenter([Number(lat), Number(lng)]);
-
-          const found = data.find(
-            (facility) =>
-              String(facility.id) === focusId ||
-              String(facility.qr_token) === focusId
-          );
-
-          if (found) setSelectedFacility(found);
-        }
-      } catch (error) {
-        console.error('Failed to load facilities:', error);
-
-        if (cancelled) return;
-
-        try {
-          const cached = normalizeFacilities(
-            await getCachedFacilities()
-          ).filter(isValidFacility);
-
-          const fallback = normalizeFacilities(fallbackFacilities).filter(
-            isValidFacility
-          );
-
-          if (!cancelled) {
-            setFacilities(cached.length > 0 ? cached : fallback);
-          }
-        } catch (fallbackError) {
-          console.error('Failed to load cached or fallback data:', fallbackError);
-
-          if (!cancelled) {
-            setFacilities(
-              normalizeFacilities(fallbackFacilities).filter(isValidFacility)
-            );
-          }
+      // If user came with a specific query, select matching facility
+      const q = searchParams.get('q');
+      if (q && data.length > 0) {
+        const found = data.find((f) => f.name?.toLowerCase().includes(q.toLowerCase()));
+        if (found && hasValidCoordinates(found.lat, found.lng)) {
+          setSelectedFacility(found);
+          setMapCenter([found.lat, found.lng]);
         }
       }
     }
-
     loadData();
-
-    return () => {
-      cancelled = true;
-    };
   }, [searchParams]);
 
-  function locateUser() {
+  // Geolocation
+  const locateUser = () => {
+    if (!navigator.geolocation) return;
     setLocating(true);
-    setLocationError(null);
-
-    if (!navigator.geolocation) {
-      setLocationError(t('map.locationError'));
-      setLocating(false);
-      return;
-    }
-
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = [
-          position.coords.latitude,
-          position.coords.longitude,
-        ];
-
-        if (!hasValidCoordinates(coords[0], coords[1])) {
-          setLocationError(t('map.locationError'));
-          setLocating(false);
-          return;
-        }
-
-        setUserLocation(coords);
-        setMapCenter(coords);
+      (pos) => {
+        const pt = [pos.coords.latitude, pos.coords.longitude];
+        setUserLocation(pt);
+        setMapCenter(pt);
         setLocating(false);
       },
-      () => {
-        setLocationError(t('map.locationDenied'));
-        setLocating(false);
-      },
-      { timeout: 8000, enableHighAccuracy: true }
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
     );
-  }
+  };
 
   const filteredFacilities = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-
-    return facilities.filter((facility) => {
-      const matchCategory =
-        activeCategory === 'all' ||
-        facility.category === activeCategory;
-
-      const name = facility.name || '';
-      const nameTe = facility.name_te || '';
-      const nameHi = facility.name_hi || '';
-      const address = facility.address || '';
-
+    return facilities.filter((f) => {
+      const matchCat = activeCategory === 'all' || f.category === activeCategory;
       const matchSearch =
         !query ||
-        name.toLowerCase().includes(query) ||
-        nameTe.toLowerCase().includes(query) ||
-        nameHi.toLowerCase().includes(query) ||
-        address.toLowerCase().includes(query);
-
-      return matchCategory && matchSearch;
+        f.name?.toLowerCase().includes(query) ||
+        f.name_te?.toLowerCase().includes(query) ||
+        f.address?.toLowerCase().includes(query);
+      return matchCat && matchSearch;
     });
   }, [facilities, activeCategory, searchQuery]);
 
-  // Only facilities with valid coordinates are rendered as map markers.
   const mappableFacilities = useMemo(
-    () =>
-      filteredFacilities.filter((facility) =>
-        hasValidCoordinates(facility.lat, facility.lng)
-      ),
+    () => filteredFacilities.filter((f) => hasValidCoordinates(f.lat, f.lng)),
     [filteredFacilities]
   );
 
-  function getFacilityDisplayName(facility) {
-    const lang = (
-      currentLang ||
-      i18n.language ||
-      'te'
-    ).slice(0, 2);
-
-    if (lang === 'te' && facility.name_te) return facility.name_te;
-    if (lang === 'hi' && facility.name_hi) return facility.name_hi;
-
-    return facility.name || 'Unnamed facility';
-  }
-
   const categories = [
-    { id: 'all', label: 'categories.all' },
-    { id: 'ghat', label: 'categories.ghat' },
-    { id: 'toilet', label: 'categories.toilet' },
-    { id: 'water', label: 'categories.water' },
-    { id: 'medical', label: 'categories.medical' },
-    { id: 'shelter', label: 'categories.shelter' },
+    { id: 'all', label: 'All' },
+    { id: 'toilet', label: 'Toilets' },
+    { id: 'water', label: 'Water' },
+    { id: 'medical', label: 'Medical' },
+    { id: 'ghat', label: 'Ghats' },
+    { id: 'shelter', label: 'Shelters' },
   ];
 
-  const categoryCounts = useMemo(() => {
-    const counts = { all: facilities.length };
-
-    facilities.forEach((facility) => {
-      if (facility.category) {
-        counts[facility.category] =
-          (counts[facility.category] || 0) + 1;
-      }
-    });
-
-    return counts;
-  }, [facilities]);
-
   return (
-    <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
-      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-6 z-10 flex flex-col gap-2 max-w-lg pointer-events-auto">
-        <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-md border border-slate-200/80 px-3.5 py-2.5">
-          <Search size={18} className="text-slate-400 shrink-0" />
+    <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden bg-[#e5f2fb]">
+      {/* ── Top Header Bar (Screen 3) ── */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-amber-100 shadow-xs px-3 py-2.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/')}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-stone-700 flex items-center justify-center transition active:scale-95"
+            aria-label="Back to Home"
+          >
+            <ArrowLeft size={17} />
+          </button>
+          <h1 className="font-extrabold text-sm sm:text-base text-stone-900 tracking-tight">
+            Facilities Map
+          </h1>
+        </div>
 
+        {/* Search Input in Header */}
+        <div className="flex-1 max-w-xs relative">
+          <Search size={14} className="absolute left-2.5 top-2.5 text-stone-400" />
           <input
             type="text"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder={t('map.searchPlaceholder')}
-            className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 placeholder-slate-400"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search on map..."
+            className="w-full pl-8 pr-7 py-1.5 bg-[#fefaf3] rounded-xl border border-amber-200/80 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#991b1b]"
           />
-
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-slate-400 hover:text-slate-600 p-0.5"
-              aria-label="Clear search"
+              className="absolute right-2 top-2 text-stone-400 hover:text-stone-600"
             >
-              <X size={15} />
+              <X size={13} />
             </button>
           )}
         </div>
-
-        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-xs transition flex items-center gap-1.5 ${
-                activeCategory === category.id
-                  ? 'bg-[#1e3a5f] text-white'
-                  : 'bg-white/95 text-slate-700 hover:bg-slate-100 border border-slate-200/80'
-              }`}
-            >
-              <span>{t(category.label)}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  activeCategory === category.id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                {categoryCounts[category.id] || 0}
-              </span>
-            </button>
-          ))}
-        </div>
       </div>
 
-      <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-10 flex flex-col gap-2">
+      {/* ── Horizontal Category Filter Pills (Screen 3) ── */}
+      <div className="absolute top-14 left-0 right-0 z-10 px-3 py-2 flex gap-1.5 overflow-x-auto no-scrollbar pointer-events-auto">
+        {categories.map((c) => {
+          const isAct = activeCategory === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setActiveCategory(c.id)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs transition flex items-center gap-1.5 ${
+                isAct
+                  ? 'bg-[#991b1b] text-white shadow-md scale-102'
+                  : 'bg-white/95 text-stone-700 hover:bg-white border border-amber-200/80'
+              }`}
+            >
+              <span>{c.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Floating Locate Me Button ── */}
+      <div className="absolute top-28 right-3 sm:right-4 z-10">
         <button
           onClick={locateUser}
           disabled={locating}
-          title={t('map.yourLocation')}
-          aria-label={t('map.yourLocation')}
-          className="w-11 h-11 bg-white hover:bg-slate-50 text-[#1e3a5f] rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center transition active:scale-95 disabled:opacity-50"
+          title="Current location"
+          className="w-10 h-10 bg-white hover:bg-slate-50 text-[#991b1b] rounded-2xl shadow-lg border border-amber-100 flex items-center justify-center transition active:scale-95 disabled:opacity-50"
         >
-          <Crosshair
-            size={20}
-            className={locating ? 'animate-spin' : ''}
-          />
+          <Crosshair size={18} className={locating ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {locationError && (
-        <div className="absolute top-24 left-4 right-4 sm:left-6 sm:max-w-md z-10 bg-amber-500 text-white text-xs p-2.5 rounded-xl shadow-md flex items-center justify-between">
-          <span>{locationError}</span>
-          <button
-            onClick={() => setLocationError(null)}
-            className="ml-2 font-bold"
-            aria-label="Dismiss location warning"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
+      {/* ── Leaflet Interactive Map ── */}
       <div className="flex-1 w-full h-full">
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={14}
           zoomControl={false}
-          className="w-full h-full"
+          scrollWheelZoom
+          style={{ width: '100%', height: '100%' }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapController center={mapCenter} />
+          <MapController center={mapCenter} zoom={15} />
 
+          {/* User Location Beacon */}
           {userLocation && (
-            <Marker position={userLocation} icon={userLocationIcon}>
+            <Marker position={userLocation} icon={userBeaconIcon}>
               <Popup>
-                <div className="text-xs font-semibold">
-                  {t('map.yourLocation')}
-                </div>
+                <strong>You are here</strong>
               </Popup>
             </Marker>
           )}
 
+          {/* Facility Pins */}
           {mappableFacilities.map((facility) => {
-            const lat = Number(facility.lat);
-            const lng = Number(facility.lng);
-
-            const isSelected =
-              String(selectedFacility?.id) === String(facility.id);
-
+            const isSelected = selectedFacility?.id === facility.id;
             return (
               <Marker
-                key={facility.id ?? `${lat}-${lng}-${facility.name}`}
-                position={[lat, lng]}
-                icon={createCategoryIcon(facility.category, isSelected)}
+                key={facility.id}
+                position={[facility.lat, facility.lng]}
+                icon={createPushkaramPin(facility.category, isSelected)}
                 eventHandlers={{
                   click: () => {
                     setSelectedFacility(facility);
-                    setMapCenter([lat, lng]);
+                    setMapCenter([facility.lat, facility.lng]);
                   },
                 }}
               />
@@ -491,80 +308,80 @@ export default function MapPage() {
         </MapContainer>
       </div>
 
+      {/* ── Bottom Floating Facility Preview Card (Screen 3) ── */}
       {selectedFacility && (
-        <div className="absolute bottom-3 left-3 right-3 sm:left-6 sm:max-w-md sm:right-auto z-20 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                {t(`categories.${selectedFacility.category}`)}
-              </span>
+        <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-20 bg-white rounded-3xl shadow-2xl border border-amber-200/80 p-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-start gap-3">
+            {/* Category Icon Emblem */}
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-black/5"
+              style={{
+                backgroundColor:
+                  CATEGORY_META[selectedFacility.category]?.bg || '#fef2f2',
+              }}
+            >
+              {CATEGORY_META[selectedFacility.category]?.icon || '📍'}
+            </div>
 
-              <h2 className="text-sm font-bold text-slate-900 leading-snug">
-                {getFacilityDisplayName(selectedFacility)}
-              </h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-extrabold text-sm text-stone-900 leading-snug truncate">
+                  {selectedFacility.name}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Available
+                </span>
+              </div>
 
               {selectedFacility.address && (
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {selectedFacility.address}
+                <p className="text-[11px] text-stone-500 mt-0.5 truncate flex items-center gap-1">
+                  <MapPin size={11} className="text-stone-400 flex-shrink-0" />
+                  <span>{selectedFacility.address}</span>
                 </p>
               )}
+
+              <p className="text-[11px] font-semibold text-stone-600 mt-1 flex items-center gap-2">
+                <span>🚶 ~350 m</span>
+                <span>•</span>
+                <span>3 min walk</span>
+              </p>
             </div>
 
             <button
               onClick={() => setSelectedFacility(null)}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              aria-label="Close facility details"
+              className="text-stone-400 hover:text-stone-600 p-1"
+              aria-label="Close"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <StatusBadge status={selectedFacility.status} />
-            <StatusBadge status={selectedFacility.operational_status} />
-
-            {selectedFacility.is_verified ? (
-              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                ✓ Verified
-              </span>
-            ) : (
-              <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                Unverified
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          {/* Action Buttons (Matches Screen 3) */}
+          <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-stone-100">
             <button
               onClick={() =>
                 navigate(
-                  `/facility/${selectedFacility.qr_token ?? selectedFacility.id}`
+                  `/navigate/${selectedFacility.qr_token || selectedFacility.id}`
                 )
               }
-              className="bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="py-2.5 px-3 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"
             >
-              <Info size={14} />
-              <span>Details &amp; QR</span>
+              <Navigation size={13} />
+              <span>Navigate</span>
             </button>
 
             <button
               onClick={() =>
                 navigate(
-                  `/navigate/${selectedFacility.qr_token ?? selectedFacility.id}`
+                  `/facility/${selectedFacility.qr_token || selectedFacility.id}`
                 )
               }
-              className="bg-[#1e3a5f] hover:bg-[#15294a] text-white rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm"
+              className="py-2.5 px-3 bg-white hover:bg-slate-50 border border-amber-200/90 text-stone-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition"
             >
-              <Navigation size={14} />
-              <span>{t('facility.navigate')}</span>
+              <Info size={13} className="text-[#991b1b]" />
+              <span>View Details</span>
             </button>
           </div>
-        </div>
-      )}
-
-      {!selectedFacility && (
-        <div className="absolute bottom-2 left-3 z-10 hidden sm:block max-w-sm pointer-events-none">
-          <SafetyDisclaimer compact />
         </div>
       )}
     </div>

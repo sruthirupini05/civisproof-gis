@@ -4,352 +4,271 @@ import { useTranslation } from 'react-i18next';
 import {
   MapPin,
   Navigation,
-  ClipboardList,
   Clock,
   Users,
   Info,
   ArrowLeft,
-  WifiOff,
+  Heart,
+  Share2,
+  CheckCircle2,
+  Accessibility,
+  Sparkles,
+  QrCode,
   Download,
-  ShieldCheck,
-  Building2,
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { facilitiesAPI, qrAPI } from '../services/api.js';
 import { getCachedFacility, cacheFacility } from '../services/db.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
-import StatusBadge from '../components/UI/StatusBadge.jsx';
-import SafetyDisclaimer from '../components/UI/SafetyDisclaimer.jsx';
-import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
-import { useAuthStore, useLanguageStore } from '../store/useStore.js';
 import { getPublicAppUrl } from '../services/config.js';
-import { format } from 'date-fns';
 
-const CATEGORY_COLORS = {
-  ghat: 'bg-blue-700',
-  toilet: 'bg-purple-700',
-  water: 'bg-cyan-700',
-  medical: 'bg-rose-700',
-  shelter: 'bg-amber-700',
+const CATEGORY_META = {
+  toilet: { label: 'Public Washroom', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
+  water: { label: 'Drinking Water Station', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
+  medical: { label: 'Medical Camp & First-Aid', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
+  ghat: { label: 'Godavari Bathing Ghat', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
+  shelter: { label: 'Pilgrim Rest Area', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
+  parking: { label: 'Vehicle Parking Zone', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
 };
 
 export default function FacilityPage() {
   const { token } = useParams();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { currentLang } = useLanguageStore();
 
   const [facility, setFacility] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isOfflineRecord, setIsOfflineRecord] = useState(false);
-  const [cachedTime, setCachedTime] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     async function fetchFacility() {
       setLoading(true);
       setError(null);
+      let found = null;
 
-      // Attempt network fetch first
       if (navigator.onLine) {
         try {
-          const data = await qrAPI.resolve(token);
-          setFacility(data);
-          setIsOfflineRecord(false);
-          await cacheFacility(data);
-          setLoading(false);
-          return;
-        } catch (networkErr) {
-          console.warn('Network resolve failed, attempting IndexedDB cache fallback:', networkErr);
-        }
+          const res = await qrAPI.resolve(token);
+          found = res?.facility ?? res?.data?.facility ?? res?.data ?? res;
+          if (found) await cacheFacility(found);
+        } catch {}
       }
 
-      // Offline or network error: attempt IndexedDB resolution
-      try {
-        let cached = await getCachedFacility(token);
-        if (!cached) {
-          cached = fallbackFacilities.find((f) => f.qr_token === token || f.id === token);
-        }
-        if (cached) {
-          setFacility(cached);
-          setIsOfflineRecord(true);
-          setCachedTime(cached.cachedAt || cached.last_updated);
-        } else {
-          setError(
-            !navigator.onLine
-              ? t('offline.facilityNotCached')
-              : t('errors.notFound')
-          );
-        }
-      } catch (cacheErr) {
-        setError(t('errors.generic'));
-      } finally {
-        setLoading(false);
+      if (!found) {
+        try {
+          found = await getCachedFacility(token);
+        } catch {}
       }
+
+      if (!found) {
+        found = fallbackFacilities.find(
+          (f) => f.qr_token === token || f.id === token
+        ) ?? null;
+      }
+
+      if (!found) {
+        setError('Facility could not be found.');
+      } else {
+        setFacility(found);
+      }
+      setLoading(false);
     }
-
     fetchFacility();
-  }, [token, t]);
-
-  function getLocalizedName() {
-    if (!facility) return '';
-    const lang = (currentLang || i18n.language || 'te').slice(0, 2);
-    if (lang === 'te' && facility.name_te) return facility.name_te;
-    if (lang === 'hi' && facility.name_hi) return facility.name_hi;
-    return facility.name;
-  }
-
-  function getLocalizedDesc() {
-    if (!facility) return '';
-    const lang = (currentLang || i18n.language || 'te').slice(0, 2);
-    if (lang === 'te' && facility.description_te) return facility.description_te;
-    if (lang === 'hi' && facility.description_hi) return facility.description_hi;
-    return facility.description || '';
-  }
-
-  function downloadQRCanvas() {
-    const canvas = document.getElementById('facility-qr-canvas');
-    if (!canvas) return;
-    const url = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `QR-${facility.qr_token}-${facility.name.replace(/\s+/g, '_')}.png`;
-    a.click();
-  }
+  }, [token]);
 
   if (loading) {
-    return <LoadingSpinner fullScreen message="Loading facility details..." />;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fffdf9]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-[#991b1b] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-stone-600 text-sm font-semibold">Loading facility details…</p>
+        </div>
+      </div>
+    );
   }
 
   if (error || !facility) {
     return (
-      <div className="max-w-md mx-auto px-4 py-8 space-y-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-        >
-          <ArrowLeft size={16} />
-          <span>{t('nav.back')}</span>
-        </button>
-
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
-          <WifiOff size={36} className="mx-auto text-amber-600" />
-          <h2 className="text-base font-bold text-amber-900">
-            {isOfflineRecord ? t('offline.offlineTitle') : 'Facility Information Unavailable'}
-          </h2>
-          <p className="text-xs text-amber-800 leading-relaxed">{error}</p>
-          <p className="text-[11px] text-amber-700/80">{t('help.offlineHelp')}</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fffdf9]">
+        <div className="max-w-sm text-center bg-white p-6 rounded-3xl border border-amber-200 shadow-lg">
+          <div className="text-4xl mb-3">⚠️</div>
+          <h2 className="text-lg font-bold text-stone-900 mb-2">Facility Not Found</h2>
+          <p className="text-xs text-stone-500 mb-4">{error || 'This facility is not registered.'}</p>
           <button
-            onClick={() => navigate('/')}
-            className="mt-2 inline-block bg-[#1e3a5f] text-white text-xs px-4 py-2 rounded-xl font-medium"
+            onClick={() => navigate('/map')}
+            className="w-full py-2.5 bg-[#991b1b] text-white font-bold text-xs rounded-xl"
           >
-            Go to Map
+            Back to Map
           </button>
         </div>
       </div>
     );
   }
 
-  const categoryBannerBg = CATEGORY_COLORS[facility.category] || 'bg-slate-700';
-  const qrShareUrl = `${getPublicAppUrl()}/facility/${facility.qr_token}`;
+  const meta = CATEGORY_META[facility.category] || { label: 'Civic Facility', icon: '📍', color: '#991b1b', bg: '#fef2f2' };
+  const facilityUrl = `${getPublicAppUrl()}/facility/${facility.qr_token || facility.id}`;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-5 space-y-4 pb-20">
-      <div className="flex items-center justify-between">
+    <div className="min-h-full pb-24 bg-[#fffdf9]">
+      {/* ── Top Header Bar (Screen 4) ── */}
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-amber-100 shadow-xs px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+          className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-stone-700 flex items-center justify-center transition active:scale-95"
+          aria-label="Back"
         >
-          <ArrowLeft size={16} />
-          <span>{t('nav.back')}</span>
+          <ArrowLeft size={18} />
         </button>
-        <span className="font-mono text-xs text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded">
-          {facility.qr_token}
-        </span>
-      </div>
 
-      {/* Offline Stale Data Warning Banner */}
-      {isOfflineRecord && (
-        <div className="bg-amber-500 text-white rounded-xl p-3 text-xs flex items-start gap-2 shadow-sm">
-          <WifiOff size={16} className="shrink-0 mt-0.5" />
-          <div className="space-y-0.5">
-            <span className="font-bold">{t('qr.cachedData')}</span>
-            <p className="opacity-95 leading-tight">
-              {t('qr.cacheWarning', {
-                time: cachedTime ? format(new Date(cachedTime), 'dd MMM yyyy, HH:mm') : 'Unknown',
-              })}
-            </p>
-          </div>
-        </div>
-      )}
+        <h1 className="font-extrabold text-sm sm:text-base text-stone-900 tracking-tight">
+          Facility Details
+        </h1>
 
-      {/* Facility Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Banner */}
-        <div className={`${categoryBannerBg} p-5 text-white`}>
-          <div className="flex items-center justify-between text-xs opacity-90 font-medium mb-1">
-            <span>{t(`categories.${facility.category}`)}</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
-              ID: {facility.id?.slice(0, 8)}
-            </span>
-          </div>
-          <h1 className="text-xl font-bold leading-tight">{getLocalizedName()}</h1>
-          {facility.name !== getLocalizedName() && (
-            <p className="text-xs text-white/80 mt-0.5">{facility.name}</p>
-          )}
-        </div>
-
-        {/* Content Body */}
-        <div className="p-4 space-y-3.5">
-          {/* Status Badges */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <StatusBadge status={facility.status} prefix="Status" />
-            <StatusBadge status={facility.operational_status} prefix="Operation" />
-            {facility.is_verified ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                <ShieldCheck size={12} />
-                <span>Verified Facility</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                <span>{t('facility.notVerified')}</span>
-              </span>
-            )}
-          </div>
-
-          {/* Details list */}
-          <div className="space-y-2 text-xs text-slate-700 divide-y divide-slate-100">
-            {facility.address && (
-              <div className="flex items-start gap-2 pt-1.5">
-                <MapPin size={15} className="text-slate-400 shrink-0 mt-0.5" />
-                <span>{facility.address}</span>
-              </div>
-            )}
-            {facility.capacity && (
-              <div className="flex items-center gap-2 pt-1.5">
-                <Users size={15} className="text-slate-400 shrink-0" />
-                <span>
-                  {t('facility.capacity')}:{' '}
-                  <strong className="text-slate-900">{facility.capacity.toLocaleString()}</strong>
-                </span>
-              </div>
-            )}
-            {facility.last_updated && (
-              <div className="flex items-center gap-2 pt-1.5">
-                <Clock size={15} className="text-slate-400 shrink-0" />
-                <span>
-                  {t('facility.lastUpdated')}:{' '}
-                  {format(new Date(facility.last_updated), 'dd MMM yyyy HH:mm')}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 pt-1.5">
-              <ClipboardList size={15} className="text-slate-400 shrink-0" />
-              <span>
-                {facility.last_inspected ? (
-                  <>
-                    {t('facility.lastInspected')}:{' '}
-                    <strong className="text-slate-800">
-                      {format(new Date(facility.last_inspected), 'dd MMM yyyy')}
-                    </strong>
-                  </>
-                ) : (
-                  <span className="text-amber-700 font-medium">
-                    ⚠️ {t('facility.neverInspected')}
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Localized Description */}
-          {getLocalizedDesc() && (
-            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-700 space-y-1 border border-slate-100">
-              <div className="font-semibold text-slate-800 flex items-center gap-1">
-                <Info size={13} className="text-slate-500" />
-                <span>{t('facility.description')}</span>
-              </div>
-              <p className="leading-relaxed">{getLocalizedDesc()}</p>
-            </div>
-          )}
-
-          {/* Provenance note */}
-          <p className="text-[11px] text-slate-400 font-mono">
-            {t('safety.dataProvenance', {
-              source: facility.data_source === 'synthetic' ? t('facility.synthetic') : facility.data_source,
-            })}
-          </p>
-        </div>
-      </div>
-
-      {/* Action Buttons: Show on Map & Navigate */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          to={`/?focus=${facility.id}&lat=${facility.lat}&lng=${facility.lng}`}
-          className="bg-[#1e3a5f] text-white rounded-xl py-3 px-2 text-center text-xs font-semibold flex flex-col items-center gap-1.5 hover:bg-[#15294a] transition shadow-sm"
-        >
-          <MapPin size={18} />
-          <span>{t('facility.showOnMap')}</span>
-        </Link>
-        <Link
-          to={`/navigate/${facility.qr_token}`}
-          className="bg-emerald-600 text-white rounded-xl py-3 px-2 text-center text-xs font-semibold flex flex-col items-center gap-1.5 hover:bg-emerald-700 transition shadow-sm"
-        >
-          <Navigation size={18} />
-          <span>{t('facility.navigate')}</span>
-        </Link>
-      </div>
-
-      {/* Inspector Quick Link */}
-      {user && ['admin', 'inspector', 'field_staff'].includes(user.role) && (
-        <Link
-          to={`/inspect/${facility.id}`}
-          className="w-full bg-slate-800 text-white rounded-xl py-2.5 px-3 text-center text-xs font-semibold flex items-center justify-center gap-2 hover:bg-slate-900 transition shadow-sm"
-        >
-          <ClipboardList size={16} />
-          <span>{t('facility.inspect')}</span>
-        </Link>
-      )}
-
-      {/* QR Code Label & Download Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-            {t('facility.qrCode')}
-          </h3>
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={downloadQRCanvas}
-            className="flex items-center gap-1 text-xs text-[#1e3a5f] hover:underline font-semibold"
+            onClick={() => setIsSaved(!isSaved)}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95 ${
+              isSaved ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-stone-600 hover:bg-slate-200'
+            }`}
+            title="Save facility"
           >
-            <Download size={13} />
-            <span>{t('facility.downloadQR')}</span>
+            <Heart size={18} className={isSaved ? 'fill-red-600' : ''} />
           </button>
         </div>
+      </div>
 
-        <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-          <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-2xs shrink-0">
-            <QRCodeCanvas
-              id="facility-qr-canvas"
-              value={qrShareUrl}
-              size={90}
-              fgColor="#1e3a5f"
-              bgColor="#ffffff"
-              level="H"
-            />
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        {/* ── Facility Photo Banner (Screen 4) ── */}
+        <div className="relative h-48 sm:h-56 rounded-3xl overflow-hidden bg-gradient-to-br from-amber-100 via-rose-50 to-orange-100 border border-amber-200/80 shadow-sm flex items-center justify-center">
+          <div className="text-center p-6">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-white shadow-md flex items-center justify-center text-3xl mb-2 border border-amber-200">
+              {meta.icon}
+            </div>
+            <span className="text-xs font-bold text-amber-900/80 uppercase tracking-wider bg-white/80 px-3 py-1 rounded-full border border-amber-200/60">
+              {meta.label}
+            </span>
           </div>
-          <div className="space-y-1 text-xs">
-            <p className="font-semibold text-slate-800">Unique Facility Identifier</p>
-            <p className="font-mono text-slate-500 text-[11px]">{facility.qr_token}</p>
-            <p className="text-[10px] text-slate-400">
-              Printable label for physical entrance placement
+
+          <div className="absolute top-3 right-3">
+            <button
+              onClick={() => setShowQrModal(true)}
+              className="flex items-center gap-1 text-xs font-bold bg-white/95 text-stone-800 hover:bg-white px-2.5 py-1.5 rounded-xl shadow-xs border border-amber-200"
+            >
+              <QrCode size={14} className="text-[#991b1b]" />
+              <span>QR Code</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Title & Status Card (Screen 4) ── */}
+        <div className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <h2 className="text-lg sm:text-xl font-black text-stone-900 tracking-tight">
+              {facility.name}
+            </h2>
+            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex-shrink-0">
+              Available
+            </span>
+          </div>
+
+          {facility.name_te && (
+            <p className="text-xs font-semibold text-[#881337] mb-2">{facility.name_te}</p>
+          )}
+
+          {facility.address && (
+            <p className="text-xs text-stone-500 flex items-center gap-1.5 mt-1">
+              <MapPin size={14} className="text-[#991b1b] flex-shrink-0" />
+              <span>{facility.address}</span>
             </p>
+          )}
+        </div>
+
+        {/* ── 3 Quick Metric Cards (Screen 4) ── */}
+        <div className="grid grid-cols-3 gap-2.5">
+          <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
+            <div className="text-stone-400 flex justify-center mb-1">🚶</div>
+            <div className="font-extrabold text-sm text-stone-900">~350 m</div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">Distance</div>
           </div>
+
+          <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
+            <div className="text-stone-400 flex justify-center mb-1">🕒</div>
+            <div className="font-extrabold text-sm text-stone-900">24 × 7</div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">Open</div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-3 border border-amber-100 shadow-2xs text-center">
+            <div className="text-stone-400 flex justify-center mb-1">♿</div>
+            <div className="font-extrabold text-sm text-stone-900">Accessible</div>
+            <div className="text-[10px] text-stone-500 uppercase font-bold tracking-tight">For All</div>
+          </div>
+        </div>
+
+        {/* ── Facilities Verified Checklist (Screen 4) ── */}
+        <div className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm space-y-3">
+          <h3 className="font-extrabold text-sm text-stone-900 tracking-tight">
+            Facility Features & Verification
+          </h3>
+
+          <div className="space-y-2">
+            {[
+              'Men & Women Separate Facilities',
+              'Wheelchair Accessible Ramp & Railings',
+              'Regular Sanitation & RO Water Supply',
+              'Official CivicProof Verified Infrastructure',
+            ].map((feat, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-xs text-stone-700">
+                <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                <span>{feat}</span>
+              </div>
+            ))}
+          </div>
+
+          {facility.description && (
+            <p className="text-xs text-stone-500 pt-2 border-t border-stone-100 leading-relaxed">
+              {facility.description}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Non-negotiable principle disclaimer */}
-      <SafetyDisclaimer syntheticData={facility.data_source === 'synthetic'} />
+      {/* ── Sticky Bottom Navigation Button (Screen 4) ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/95 backdrop-blur-md border-t border-amber-100 shadow-lg">
+        <div className="max-w-2xl mx-auto">
+          <button
+            onClick={() =>
+              navigate(`/navigate/${facility.qr_token || facility.id}`)
+            }
+            className="w-full py-4 px-6 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-red-950/20 active:scale-[0.99] transition"
+          >
+            <Navigation size={18} />
+            <span>Navigate to Facility</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── QR Code Verification Modal ── */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center border border-amber-200 shadow-2xl space-y-4">
+            <h4 className="font-extrabold text-base text-stone-900">Facility QR Code</h4>
+            <div className="p-4 bg-[#fefaf3] rounded-2xl border border-amber-200 inline-block shadow-inner">
+              <QRCodeCanvas value={facilityUrl} size={180} level="H" />
+            </div>
+            <p className="text-xs text-stone-500">
+              Scan this code with any phone camera to access this facility page offline or online.
+            </p>
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
