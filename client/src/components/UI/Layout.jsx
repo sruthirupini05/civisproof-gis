@@ -12,6 +12,9 @@ export default function Layout() {
   const { mode, isDark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
 
+  const isTe = (currentLang || i18n.language || 'te').startsWith('te');
+  const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-stone-100 font-sans transition-colors duration-200">
       {/* ── Sacred Pushkaram Header ── */}
