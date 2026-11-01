@@ -158,6 +158,68 @@ function PanTo({ point }) {
   return null;
 }
 
+function normalizeSlug(str) {
+  if (!str) return '';
+  return String(str).toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+function findFacilityOrDestination(rawTarget) {
+  if (!rawTarget) return null;
+  const decoded = decodeURIComponent(rawTarget).trim();
+  const norm = normalizeSlug(decoded);
+
+  // 1. Exact match in fallbackFacilities
+  const directFac = fallbackFacilities.find(
+    (f) => (f.qr_token === decoded || f.id === decoded) && isValidFacilityWithCoords(f)
+  );
+  if (directFac) return directFac;
+
+  // 2. Exact match in destinations
+  const directDest = destinations.find(
+    (d) => d.id === decoded && isValidFacilityWithCoords(d)
+  );
+  if (directDest) {
+    return {
+      ...directDest,
+      status: 'verified',
+      operational_status: 'operational',
+    };
+  }
+
+  // 3. Normalized slug / spaces / hyphens / case-insensitive in facilities
+  const normFac = fallbackFacilities.find((f) => {
+    if (!isValidFacilityWithCoords(f)) return false;
+    return (
+      normalizeSlug(f.id) === norm ||
+      normalizeSlug(f.qr_token) === norm ||
+      normalizeSlug(f.name) === norm ||
+      normalizeSlug(f.name).includes(norm) ||
+      norm.includes(normalizeSlug(f.name))
+    );
+  });
+  if (normFac) return normFac;
+
+  // 4. Normalized slug / spaces / hyphens in destinations
+  const normDest = destinations.find((d) => {
+    if (!isValidFacilityWithCoords(d)) return false;
+    return (
+      normalizeSlug(d.id) === norm ||
+      normalizeSlug(d.name) === norm ||
+      normalizeSlug(d.name).includes(norm) ||
+      norm.includes(normalizeSlug(d.name))
+    );
+  });
+  if (normDest) {
+    return {
+      ...normDest,
+      status: 'verified',
+      operational_status: 'operational',
+    };
+  }
+
+  return null;
+}
+
 export default function NavigatePage() {
   const { facilityId, id } = useParams();
   const [sp] = useSearchParams();
@@ -168,7 +230,11 @@ export default function NavigatePage() {
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
 
-  const targetId = facilityId ?? id ?? sp.get('facilityId') ?? sp.get('id');
+  const targetId = (() => {
+    const raw = facilityId ?? id ?? sp.get('facilityId') ?? sp.get('id');
+    if (!raw) return null;
+    try { return decodeURIComponent(raw); } catch { return raw; }
+  })();
 
   const [facility, setFacility] = useState(null);
   const [loadErr, setLoadErr] = useState('');
@@ -201,31 +267,31 @@ export default function NavigatePage() {
       setLoading(true);
       setLoadErr('');
 
+      // Check query param direct coordinates first (e.g. from OSM POIs)
+      const qLat = sp.get('lat');
+      const qLng = sp.get('lng');
+      if (qLat && qLng && isFinite(+qLat) && isFinite(+qLng)) {
+        setFacility({
+          id: targetId || 'custom-location',
+          name: sp.get('name') || (isTe ? 'ఎంచుకున్న ప్రదేశం' : isHi ? 'चयनित स्थान' : 'Selected Location'),
+          lat: +qLat,
+          lng: +qLng,
+          address: sp.get('address') || 'Rajamahendravaram',
+          status: 'verified',
+          operational_status: 'operational',
+        });
+        setLoading(false);
+        return;
+      }
+
       if (!targetId) {
         setLoadErr(isTe ? 'సౌకర్యం లేదా ప్రదేశం ఎంపిక కాలేదు.' : isHi ? 'सुविधा या स्थान का चयन नहीं किया गया।' : 'No destination selected.');
         setLoading(false);
         return;
       }
 
-      let found = null;
-
-      // Check bundled public facilities
-      const directFac = fallbackFacilities.find(
-        (f) => (f.qr_token === targetId || f.id === targetId) && isValidFacilityWithCoords(f)
-      );
-      if (directFac) found = directFac;
-
-      // Check bundled tourism destinations
-      if (!found) {
-        const directDest = destinations.find((d) => d.id === targetId);
-        if (directDest && isValidFacilityWithCoords(directDest)) {
-          found = {
-            ...directDest,
-            status: 'verified',
-            operational_status: 'operational',
-          };
-        }
-      }
+      // Check bundled facilities & destinations with normalized slug matching
+      let found = findFacilityOrDestination(targetId);
 
       // Check IndexedDB
       if (!found) {
@@ -268,7 +334,7 @@ export default function NavigatePage() {
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, [targetId, isTe, isHi]);
+  }, [targetId, isTe, isHi, sp]);
 
   // 2. Geolocation with fallback
   useEffect(() => {

@@ -1,0 +1,23 @@
+{
+  "name": "civicproof-gis-monorepo",
+  "version": "1.0.0",
+  "description": "CivicProof GIS — Godavari Pushkaralu 2027 Civic Infrastructure & Tourism GIS Platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "start": "node server/src/index.js",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.7",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
+    "uuid": "^10.0.0"
+  }
+}

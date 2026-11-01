@@ -481,7 +481,7 @@ export default function ExplorePage() {
                           </button>
 
                           <button
-                            onClick={() => navigate(`/navigate/${dest.id}`)}
+                            onClick={() => navigate(`/navigate/${encodeURIComponent(dest.id)}`)}
                             className="py-2 px-3 bg-[#991b1b] hover:bg-[#881337] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs active:scale-95 transition"
                           >
                             <Navigation size={12} />
@@ -570,7 +570,7 @@ export default function ExplorePage() {
                     {isTe ? 'వివరాలు చూడండి' : isHi ? 'विवरण देखें' : 'View Details'}
                   </button>
                   <button
-                    onClick={() => navigate(`/navigate/${selectedDest.id}`)}
+                    onClick={() => navigate(`/navigate/${encodeURIComponent(selectedDest.id)}`)}
                     className="py-2 bg-[#991b1b] text-white text-xs font-bold rounded-xl"
                   >
                     {isTe ? 'నావిగేట్' : isHi ? 'नेविगेट' : 'Navigate'}

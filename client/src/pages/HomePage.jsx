@@ -246,7 +246,12 @@ export default function HomePage() {
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => navigate(`/map?category=${cat.id}`)}
+                onClick={() => {
+                  if (cat.id === 'food') navigate('/food-nearby');
+                  else if (cat.id === 'petrol') navigate('/petrol-stations');
+                  else if (cat.id === 'transport') navigate('/transport-hubs');
+                  else navigate(`/map?category=${cat.id}`);
+                }}
                 className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 hover:border-amber-300 dark:hover:border-slate-700 shadow-xs hover:shadow-md transition text-center group active:scale-98"
               >
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition shadow-2xs border border-amber-200/50 dark:border-slate-600">

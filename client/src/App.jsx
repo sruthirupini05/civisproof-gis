@@ -25,6 +25,9 @@ const ExplorePage = lazy(() => import('./pages/ExplorePage.jsx'));
 const DestinationDetailPage = lazy(() => import('./pages/DestinationDetailPage.jsx'));
 const MoreServicesPage = lazy(() => import('./pages/MoreServicesPage.jsx'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
+const NearbyFoodPage = lazy(() => import('./pages/NearbyFoodPage.jsx'));
+const PetrolStationsPage = lazy(() => import('./pages/PetrolStationsPage.jsx'));
+const TransportHubsPage = lazy(() => import('./pages/TransportHubsPage.jsx'));
 
 export default function App() {
   const { mode, setMode, refreshSystemTheme } = useThemeStore();
@@ -86,6 +89,9 @@ export default function App() {
             <Route path="explore/:id" element={<DestinationDetailPage />} />
             <Route path="services/:type" element={<MoreServicesPage />} />
             <Route path="services" element={<MoreServicesPage />} />
+            <Route path="food-nearby" element={<NearbyFoodPage />} />
+            <Route path="petrol-stations" element={<PetrolStationsPage />} />
+            <Route path="transport-hubs" element={<TransportHubsPage />} />
             <Route path="facility/:token" element={<FacilityPage />} />
             <Route path="navigate/:facilityId" element={<NavigatePage />} />
             <Route path="help" element={<HelpPage />} />

@@ -225,7 +225,7 @@ export default function DestinationDetailPage() {
         {/* ── Primary Action Bar (Navigate & View on Map) ── */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => navigate(`/navigate/${dest.id}`)}
+            onClick={() => navigate(`/navigate/${encodeURIComponent(dest.id)}`)}
             className="py-3 px-4 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-bold text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md active:scale-98 transition"
           >
             <Navigation size={16} />

@@ -395,7 +395,7 @@ export default function MapPage() {
             <button
               onClick={() =>
                 navigate(
-                  `/navigate/${selectedFacility.qr_token || selectedFacility.id}`
+                  `/navigate/${encodeURIComponent(selectedFacility.qr_token || selectedFacility.id)}`
                 )
               }
               className="py-2.5 px-3 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"

@@ -106,27 +106,7 @@ export async function authenticateLogin(username, password) {
     };
   }
 
-  // 2. Next, try remote server login API if online
-  if (navigator.onLine) {
-    try {
-      const res = await authAPI.login(normalizedUser, cleanPass);
-      if (res && res.user && res.token) {
-        // Sync to local database
-        await saveUserToDatabase({
-          username: res.user.username.toLowerCase(),
-          password: cleanPass,
-          role: res.user.role,
-        });
-        return res;
-      }
-    } catch (err) {
-      if (err.response?.status === 401) {
-        throw new Error('Invalid username or password. Check your credentials.');
-      }
-    }
-  }
-
-  // 3. Fallback check against default demo accounts in case DB is newly initialized
+  // 2. Immediate check against default official accounts
   const defaultMatch = DEFAULT_ACCOUNTS.find(
     (a) => a.username.toLowerCase() === normalizedUser && a.password === cleanPass
   );
@@ -145,6 +125,21 @@ export async function authenticateLogin(username, password) {
       },
       token: `local_token_${btoa(defaultMatch.username + ':' + Date.now())}`,
     };
+  }
+
+  // 3. Try remote server login API if online
+  if (navigator.onLine) {
+    try {
+      const res = await authAPI.login(normalizedUser, cleanPass);
+      if (res && res.user && res.token) {
+        await saveUserToDatabase({
+          username: res.user.username.toLowerCase(),
+          password: cleanPass,
+          role: res.user.role,
+        });
+        return res;
+      }
+    } catch {}
   }
 
   throw new Error('Invalid username or password. Only validated official logins can access this feature.');

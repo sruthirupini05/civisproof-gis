@@ -4,7 +4,9 @@ import { fileURLToPath } from 'url';
 import { seedFacilities } from './data/seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '../../civicproof.db');
+const DB_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'civicproof.db')
+  : path.join(__dirname, '../../civicproof.db');
 
 let db;
 

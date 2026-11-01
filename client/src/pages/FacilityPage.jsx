@@ -442,7 +442,7 @@ export default function FacilityPage() {
         {/* ── Primary Action: Navigate to Facility ── */}
         <div className="pt-2">
           <button
-            onClick={() => navigate(`/navigate/${facility.qr_token || facility.id}`)}
+            onClick={() => navigate(`/navigate/${encodeURIComponent(facility.qr_token || facility.id)}`)}
             className="w-full py-4 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-98 transition"
           >
             <Navigation size={18} />
