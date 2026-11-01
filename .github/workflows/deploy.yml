@@ -28,14 +28,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Install frontend packages
         working-directory: client
-        run: npm install
+        run: npm ci
 
       - name: Build frontend
         working-directory: client
         run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
 
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
@@ -45,14 +52,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
       - name: Publish website
         id: deployment
         uses: actions/deploy-pages@v4
