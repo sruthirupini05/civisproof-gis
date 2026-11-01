@@ -8,6 +8,7 @@ import { cacheAllFacilities } from './services/db.js';
 import { facilitiesAPI } from './services/api.js';
 import { setupOnlineSync } from './services/sync.js';
 import fallbackFacilities from './data/fallbackFacilities.json';
+import { useThemeStore } from './store/useStore.js';
 
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const MapPage = lazy(() => import('./pages/MapPage.jsx'));
@@ -20,8 +21,24 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 const QRAdminPage = lazy(() => import('./pages/QRAdminPage.jsx'));
 const CityQRPage = lazy(() => import('./pages/CityQRPage.jsx'));
+const ExplorePage = lazy(() => import('./pages/ExplorePage.jsx'));
+const DestinationDetailPage = lazy(() => import('./pages/DestinationDetailPage.jsx'));
+const MoreServicesPage = lazy(() => import('./pages/MoreServicesPage.jsx'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
 
 export default function App() {
+  const { mode, setMode, refreshSystemTheme } = useThemeStore();
+
+  useEffect(() => {
+    // Initial theme apply
+    setMode(mode);
+
+    // Listen to OS system dark/light changes
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = () => refreshSystemTheme();
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [mode, setMode, refreshSystemTheme]);
   useEffect(() => {
     async function preheatOffline() {
       try {
@@ -65,6 +82,10 @@ export default function App() {
             {/* Public Pilgrim Routes */}
             <Route index element={<HomePage />} />
             <Route path="map" element={<MapPage />} />
+            <Route path="explore" element={<ExplorePage />} />
+            <Route path="explore/:id" element={<DestinationDetailPage />} />
+            <Route path="services/:type" element={<MoreServicesPage />} />
+            <Route path="services" element={<MoreServicesPage />} />
             <Route path="facility/:token" element={<FacilityPage />} />
             <Route path="navigate/:facilityId" element={<NavigatePage />} />
             <Route path="help" element={<HelpPage />} />
@@ -87,6 +108,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['inspector', 'admin']}>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboardPage />
                 </ProtectedRoute>
               }
             />

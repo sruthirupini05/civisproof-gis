@@ -22,6 +22,46 @@ export const useLanguageStore = create((set) => ({
   },
 }));
 
+function getSystemPrefersDark() {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+export const useThemeStore = create(
+  persist(
+    (set, get) => ({
+      mode: 'auto', // 'auto' | 'light' | 'dark'
+      isDark: getSystemPrefersDark(),
+      setMode: (mode) => {
+        const isDark = mode === 'dark' || (mode === 'auto' && getSystemPrefersDark());
+        if (typeof document !== 'undefined') {
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+        set({ mode, isDark });
+      },
+      refreshSystemTheme: () => {
+        const { mode } = get();
+        if (mode === 'auto') {
+          const isDark = getSystemPrefersDark();
+          if (typeof document !== 'undefined') {
+            if (isDark) {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+          set({ isDark });
+        }
+      },
+    }),
+    { name: 'civicproof_theme' }
+  )
+);
+
 export const useMapStore = create((set) => ({
   selectedFacility: null,
   activeCategory: 'all',

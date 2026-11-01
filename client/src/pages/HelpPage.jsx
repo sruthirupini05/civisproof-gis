@@ -126,25 +126,25 @@ export default function HelpPage() {
                 title: isTe ? 'సమాచార కేంద్రాలు' : isHi ? 'सूचना केंद्र' : 'Information Centres',
                 desc: isTe ? 'రైల్వే స్టేషన్, బస్ స్టాండ్ మరియు ప్రధాన ఘాట్ల వద్ద' : isHi ? 'रेलवे स्टेशन, बस स्टैंड एवं मुख्य घाटों पर' : 'At railway station, bus stands & main ghats',
                 icon: Info,
-                link: '/map?category=shelter',
+                link: '/services/info',
               },
               {
                 title: isTe ? 'తప్పిపోయిన వారి / వస్తువుల సహాయ కేంద్రం' : isHi ? 'खोया-पाया केंद्र' : 'Lost & Found Counters',
                 desc: isTe ? 'వస్తువులు లేదా కుటుంబ సభ్యులను గుర్తించడానికి' : isHi ? 'खोई वस्तुओं या परिजनों की सूचना के लिए' : 'Report or find lost items and relatives',
                 icon: Search,
-                link: '/map?q=Information',
+                link: '/services/lost-found',
               },
               {
                 title: isTe ? 'ప్రత్యేక సహాయ & వీల్‌చైర్ సేవలు' : isHi ? 'दिव्यांग व वृद्ध सहायता सेवा' : 'Accessibility Services',
                 desc: isTe ? 'వృద్ధులు మరియు దివ్యాంగులకు ఉచిత బ్యాటరీ కార్లు' : isHi ? 'बुजुर्गों और दिव्यांगों के लिए बैटरी कार व व्हीलचेयर' : 'Wheelchairs & battery assistance for elderly',
                 icon: Accessibility,
-                link: '/map?category=toilet',
+                link: '/services/accessibility',
               },
               {
                 title: isTe ? 'అధికారిక పుష్కర నవీకరణలు' : isHi ? 'आधिकारिक पुष्करम अपडेट' : 'Official Event Updates',
                 desc: isTe ? 'ఘాట్ల రద్దీ సమాచారం మరియు హెచ్చరికలు' : isHi ? 'घाटों पर भीड़ एवं संचालन की ताजा स्थिति' : 'Crowd density and ghat operational updates',
                 icon: Bell,
-                link: '/map',
+                link: '/services/events',
               },
             ].map((srv, idx) => (
               <Link

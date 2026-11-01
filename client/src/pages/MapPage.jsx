@@ -16,17 +16,21 @@ import {
 import { facilitiesAPI } from '../services/api.js';
 import { cacheAllFacilities, getCachedFacilities } from '../services/db.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
-import { useLanguageStore } from '../store/useStore.js';
+import { useLanguageStore, useThemeStore } from '../store/useStore.js';
 
 const DEFAULT_CENTER = [16.9948, 81.7798]; // Rajahmundry Main Ghat
 
 const CATEGORY_META = {
-  toilet: { label: 'Toilets', teLabel: 'మరుగుదొడ్లు', hiLabel: 'शौचालय', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
-  water: { label: 'Water', teLabel: 'త్రాగునీరు', hiLabel: 'पेयजल', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
-  medical: { label: 'Medical', teLabel: 'వైద్యం', hiLabel: 'चिकित्सा', icon: '➕', color: '#dc2626', bg: '#fff1f2' },
   ghat: { label: 'Ghats', teLabel: 'ఘాట్లు', hiLabel: 'घाट', icon: '🌊', color: '#b45309', bg: '#fffbeb' },
-  shelter: { label: 'Shelters', teLabel: 'విశ్రాంతి', hiLabel: 'विश्राम', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
+  water: { label: 'Water', teLabel: 'త్రాగునీరు', hiLabel: 'पेयजल', icon: '💧', color: '#0284c7', bg: '#f0f9ff' },
+  medical: { label: 'Medical', teLabel: 'వైద్యం', hiLabel: 'चिकित्सा', icon: '🏥', color: '#dc2626', bg: '#fff1f2' },
+  toilet: { label: 'Toilets', teLabel: 'మరుగుదొడ్లు', hiLabel: 'शौचालय', icon: '🚻', color: '#991b1b', bg: '#fef2f2' },
+  petrol: { label: 'Petrol Stations', teLabel: 'పెట్రోల్ బంకులు', hiLabel: 'पेट्रोल पंप', icon: '⛽', color: '#ea580c', bg: '#fff7ed' },
+  ev_charging: { label: 'EV Charging', teLabel: 'EV ఛార్జింగ్', hiLabel: 'ईवी चार्जिंग', icon: '⚡', color: '#16a34a', bg: '#f0fdf4' },
+  transport: { label: 'Transport', teLabel: 'రవాణా', hiLabel: 'परिवहन', icon: '🚆', color: '#2563eb', bg: '#eff6ff' },
+  shelter: { label: 'Accommodations', teLabel: 'విశ్రాంతి ఆశ్రయాలు', hiLabel: 'विश्राम', icon: '🛏️', color: '#7c3aed', bg: '#faf5ff' },
   parking: { label: 'Parking', teLabel: 'పార్కింగ్', hiLabel: 'पार्किंग', icon: '🅿️', color: '#475569', bg: '#f8fafc' },
+  food: { label: 'Food & Rest', teLabel: 'అన్నదానం', hiLabel: 'भोजन', icon: '🍽️', color: '#059669', bg: '#ecfdf5' },
 };
 
 function hasValidCoordinates(lat, lng) {
@@ -100,6 +104,7 @@ export default function MapPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentLang } = useLanguageStore();
+  const { isDark } = useThemeStore();
 
   const isTe = (currentLang || i18n.language || 'te').startsWith('te');
   const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
@@ -184,11 +189,16 @@ export default function MapPage() {
 
   const categories = [
     { id: 'all', label: isTe ? 'అన్నీ' : isHi ? 'सभी' : 'All' },
-    { id: 'toilet', label: isTe ? 'మరుగుదొడ్లు' : isHi ? 'शौचालय' : 'Toilets' },
+    { id: 'ghat', label: isTe ? 'ఘాట్లు' : isHi ? 'घाट' : 'Ghats' },
     { id: 'water', label: isTe ? 'త్రాగునీరు' : isHi ? 'पेयजल' : 'Water' },
     { id: 'medical', label: isTe ? 'వైద్యం' : isHi ? 'चिकित्सा' : 'Medical' },
-    { id: 'ghat', label: isTe ? 'ఘాట్లు' : isHi ? 'घाट' : 'Ghats' },
+    { id: 'toilet', label: isTe ? 'మరుగుదొడ్లు' : isHi ? 'शौचालय' : 'Toilets' },
+    { id: 'petrol', label: isTe ? 'పెట్రోల్' : isHi ? 'पेट्रोल' : 'Petrol' },
+    { id: 'ev_charging', label: isTe ? 'EV ఛార్జింగ్' : isHi ? 'ईवी चार्जिंग' : 'EV Charging' },
+    { id: 'transport', label: isTe ? 'రవాణా' : isHi ? 'परिवहन' : 'Transport' },
     { id: 'shelter', label: isTe ? 'విశ్రాంతి' : isHi ? 'विश्राम' : 'Shelters' },
+    { id: 'parking', label: isTe ? 'పార్కింగ్' : isHi ? 'पार्किंग' : 'Parking' },
+    { id: 'food', label: isTe ? 'అన్నదానం' : isHi ? 'भोजन' : 'Food' },
   ];
 
   const getDisplayName = (f) => {
@@ -279,7 +289,11 @@ export default function MapPage() {
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url={
+              isDark
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            }
           />
 
           <MapController center={mapCenter} zoom={15} />
@@ -335,6 +349,12 @@ export default function MapPage() {
                 </span>
               </div>
 
+              {selectedFacility.transport_type && (
+                <span className="inline-block mt-0.5 text-[10px] font-extrabold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full uppercase">
+                  {selectedFacility.transport_type.replace('_', ' ')}
+                </span>
+              )}
+
               {selectedFacility.address && (
                 <p className="text-[11px] text-stone-500 mt-0.5 truncate flex items-center gap-1">
                   <MapPin size={11} className="text-stone-400 flex-shrink-0" />
@@ -343,9 +363,21 @@ export default function MapPage() {
               )}
 
               <p className="text-[11px] font-semibold text-stone-600 mt-1 flex items-center gap-2">
-                <span>🚶 ~350 m</span>
+                <span>
+                  📍 {(() => {
+                    const ref = userLocation || DEFAULT_CENTER;
+                    const d = Math.round(
+                      (6371 * 2 * Math.asin(Math.sqrt(
+                        Math.sin(((selectedFacility.lat - ref[0]) * Math.PI) / 360) ** 2 +
+                        Math.cos((ref[0] * Math.PI) / 180) * Math.cos((selectedFacility.lat * Math.PI) / 180) *
+                        Math.sin(((selectedFacility.lng - ref[1]) * Math.PI) / 360) ** 2
+                      ))) * 10
+                    ) / 10;
+                    return d < 1 ? `${Math.round(d * 1000)} m` : `${d} km`;
+                  })()}
+                </span>
                 <span>•</span>
-                <span>{isTe ? '3 నిమిషాల నడక' : isHi ? '3 मिनट पैदल' : '3 min walk'}</span>
+                <span>{selectedFacility.operating_hours || '24×7'}</span>
               </p>
             </div>
 

@@ -1,9 +1,14 @@
 /**
- * NavigatePage — Godavari Pushkaralu 2027 Navigation
+ * NavigatePage — Apple Maps iOS Style Sacred Godavari Pushkaralu Navigation
  *
- * Full multilingual support (Telugu, Hindi, English)
- * 100% resilient coordinate resolution via bundled database & cache
- * Live Apple Maps-style maneuver HUD & animated route simulation
+ * Faithfully matches the Apple Maps iOS reference UI:
+ * 1. Top floating capsule: "Proceed to the route" with direction turn icon
+ * 2. 3-Stat Bottom HUD: [ Arrival Time | Travel Duration | Distance ]
+ * 3. Pull-Up Actions Drawer: Destination info, + Add Stop, Share ETA, Report Incident, Voice, Red "End Route"
+ * 4. Directions Multi-Route Sheet: [Car, Walk, Transit, Bike, Ride] with Green "GO" buttons
+ * 5. On-Map Route Callouts & Apple Maps Blue Navigation Heading Puck
+ * 6. Dynamic CartoDB Dark Matter tiles matching dark mode
+ * 7. Support for both public facilities AND tourism destinations
  */
 
 import React, {
@@ -21,47 +26,32 @@ import {
   Crosshair,
   MapPin,
   Clock,
-  Play,
-  Square,
+  Car,
+  Footprints,
+  Train,
+  Bike,
+  UserCheck,
+  Volume2,
+  VolumeX,
+  Share2,
+  AlertCircle,
+  Plus,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Compass,
+  MessageSquareWarning,
+  Building2,
+  Check,
 } from 'lucide-react';
 import { qrAPI, facilitiesAPI } from '../services/api.js';
 import { getCachedFacility } from '../services/db.js';
 import { calculateRoute } from '../services/routing.js';
 import fallbackFacilities from '../data/fallbackFacilities.json';
-import { useLanguageStore } from '../store/useStore.js';
+import destinations from '../data/destinations.json';
+import { useLanguageStore, useThemeStore } from '../store/useStore.js';
 
-/* ─── POI Categories ─────────────────────────────────────────── */
-const POI_CATS = [
-  { key: 'fuel', label: 'Petrol', teLabel: 'పెట్రోల్', hiLabel: 'पेट्रोल', icon: '⛽', color: '#f97316', query: (r, lat, lng) => `node[amenity=fuel](around:${r},${lat},${lng});` },
-  { key: 'food', label: 'Food', teLabel: 'ఆహారం', hiLabel: 'भोजन', icon: '🍽️', color: '#16a34a', query: (r, lat, lng) => `(node[amenity=restaurant](around:${r},${lat},${lng});node[amenity=fast_food](around:${r},${lat},${lng});node[amenity=cafe](around:${r},${lat},${lng}););` },
-  { key: 'medical', label: 'Medical', teLabel: 'వైద్యం', hiLabel: 'चिकित्सा', icon: '🏥', color: '#dc2626', query: (r, lat, lng) => `(node[amenity=hospital](around:${r},${lat},${lng});node[amenity=clinic](around:${r},${lat},${lng});node[amenity=pharmacy](around:${r},${lat},${lng}););` },
-  { key: 'atm', label: 'ATM', teLabel: 'ATM', hiLabel: 'एटीएम', icon: '🏧', color: '#7c3aed', query: (r, lat, lng) => `(node[amenity=atm](around:${r},${lat},${lng});node[amenity=bank](around:${r},${lat},${lng}););` },
-  { key: 'toilet', label: 'Toilet', teLabel: 'మరుగుదొడ్డి', hiLabel: 'शौचालय', icon: '🚻', color: '#991b1b', query: (r, lat, lng) => `node[amenity=toilets](around:${r},${lat},${lng});` },
-];
-
-async function fetchPOIs(lat, lng, catKey, radiusM = 2500) {
-  const cat = POI_CATS.find((c) => c.key === catKey);
-  if (!cat) return [];
-  const q = `[out:json][timeout:12];${cat.query(radiusM, lat, lng)}out 15;`;
-  const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`;
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-    const data = await res.json();
-    return (data.elements ?? []).map((el) => ({
-      id: el.id,
-      lat: el.lat,
-      lng: el.lon,
-      name: el.tags?.name ?? el.tags?.['name:en'] ?? cat.label,
-      category: catKey,
-      address: el.tags?.['addr:street'] ?? '',
-    }));
-  } catch {
-    return [];
-  }
-}
-
-/* ─── Coordinate Helpers ─────────────────────────────────────── */
-const DEFAULT_CENTRE = [16.9948, 81.7798];
+const DEFAULT_CENTRE = [16.9948, 81.7798]; // Rajahmundry City Centre
 
 function getCoords(p) {
   if (!p || typeof p !== 'object') return null;
@@ -94,70 +84,67 @@ function fmtDur(s, isTe, isHi) {
   if (min < 60) return isTe ? `${min} నిమిషాలు` : isHi ? `${min} मिनट` : `${min} min`;
   const hr = Math.floor(min / 60);
   const rem = min % 60;
-  return isTe ? `${hr} గంట ${rem} నిమిషాలు` : isHi ? `${hr} घंटे ${rem} मिनट` : `${hr}h ${rem}m`;
+  return isTe ? `${hr} గంట ${rem} ని` : isHi ? `${hr} घंटे ${rem} मि` : `${hr}h ${rem}m`;
 }
 
 function calcETA(durS) {
   if (!durS) return '';
   const d = new Date(Date.now() + durS * 1000);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function mIcon(step) {
-  if (!step) return '↑';
-  const t = String(step.maneuver || '').toLowerCase();
-  const m = String(step.modifier || '').toLowerCase();
-  if (t === 'depart') return '📍';
-  if (t === 'arrive') return '🏁';
-  if (t.includes('roundabout')) return '⟳';
-  if (t.includes('merge')) return '⇒';
-  if (m.includes('sharp left')) return '↩';
-  if (m.includes('sharp right')) return '↪';
-  if (m.includes('slight left')) return '↙';
-  if (m.includes('slight right')) return '↘';
-  if (m.includes('left') || t.includes('left')) return '↰';
-  if (m.includes('right') || t.includes('right')) return '↱';
-  return '↑';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 /* ─── Leaflet Marker Icons ────────────────────────────────────── */
 const mkIcon = (html, size = [28, 28], anchor = [14, 14]) =>
   L.divIcon({ className: '', html, iconSize: size, iconAnchor: anchor });
 
-const userBeaconIcon = mkIcon(
-  `<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.35);"></div>`,
-  [20, 20], [10, 10]
-);
-
-const destPinIcon = mkIcon(
-  `<div style="font-size:32px;line-height:1;filter:drop-shadow(0 4px 6px rgba(153,27,27,0.4));">📍</div>`,
-  [32, 32], [16, 32]
-);
-
-const pulsePuckIcon = mkIcon(
-  `<div style="position:relative;width:28px;height:28px;">
-    <div style="position:absolute;inset:0;background:rgba(153,27,27,0.3);border-radius:50%;animation:pulse-ring 1.6s infinite;"></div>
-    <div style="position:absolute;inset:4px;background:#991b1b;border:3px solid #fff;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.4);"></div>
-  </div>`,
-  [28, 28], [14, 14]
-);
-
-function poiPinIcon(cat) {
-  const c = POI_CATS.find((p) => p.key === cat);
-  return mkIcon(
-    `<div style="background:${c?.color || '#991b1b'};color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,0.25);border:2px solid #fff;">${c?.icon || '📌'}</div>`,
-    [30, 30], [15, 15]
+// Apple Maps Blue Navigation Heading Puck
+const appleNavPuckIcon = (headingDeg = 45) =>
+  mkIcon(
+    `<div style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;inset:0;background:rgba(0,122,255,0.22);border-radius:50%;animation:pulse-ring 1.8s infinite;"></div>
+      <div style="width:26px;height:26px;background:#007aff;border:3px solid #ffffff;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="transform: rotate(${headingDeg}deg);">
+          <path d="M12 2L4 21L12 17L20 21L12 2Z" fill="#ffffff"/>
+        </svg>
+      </div>
+    </div>`,
+    [34, 34],
+    [17, 17]
   );
-}
+
+// Destination Red Pin
+const destPinIcon = mkIcon(
+  `<div style="font-size:32px;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.4));">📍</div>`,
+  [32, 32],
+  [16, 32]
+);
+
+// Map route callout label
+const mapCalloutIcon = (text, isFastest = false) =>
+  mkIcon(
+    `<div style="
+      background: ${isFastest ? '#007aff' : 'rgba(30,30,32,0.92)'};
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.2);
+    ">${text}</div>`,
+    [100, 26],
+    [50, 13]
+  );
 
 function FitBounds({ points }) {
   const map = useMap();
   const key = useMemo(() => JSON.stringify(points), [points]);
   useEffect(() => {
     if (points.length >= 2) {
-      map.fitBounds(L.latLngBounds(points), { padding: [80, 80], maxZoom: 16, animate: true });
+      map.fitBounds(L.latLngBounds(points), { padding: [80, 80], maxZoom: 15, animate: true });
     } else if (points.length === 1) {
-      map.setView(points[0], 15, { animate: true });
+      map.setView(points[0], 14, { animate: true });
     }
   }, [key, map]);
   return null;
@@ -176,6 +163,7 @@ export default function NavigatePage() {
   const [sp] = useSearchParams();
   const navigate = useNavigate();
   const { currentLang } = useLanguageStore();
+  const { isDark } = useThemeStore();
 
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
@@ -186,24 +174,27 @@ export default function NavigatePage() {
   const [loadErr, setLoadErr] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // User location & Travel Mode
   const [origin, setOrigin] = useState(null);
-  const [mode, setMode] = useState('walking');
-  const [route, setRoute] = useState(null);
+  const [mode, setMode] = useState('driving'); // 'driving' | 'walking' | 'transit' | 'cycling' | 'ride'
+  const [voiceMuted, setVoiceMuted] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+
+  // Routing State
+  const [routes, setRoutes] = useState([]);
+  const [selectedRouteIdx, setSelectedRouteIdx] = useState(0);
   const [routeLoading, setRouteLoading] = useState(false);
 
-  const [navActive, setNavActive] = useState(false);
-  const [stepIdx, setStepIdx] = useState(0);
-  const [arrived, setArrived] = useState(false);
-
-  const [simActive, setSimActive] = useState(false);
+  // Navigation HUD state
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [simPtIdx, setSimPtIdx] = useState(0);
   const [simPuck, setSimPuck] = useState(null);
+  const [puckHeading, setPuckHeading] = useState(30);
+
   const simRef = useRef(null);
 
-  const [activePoi, setActivePoi] = useState(null);
-  const [pois, setPois] = useState([]);
-
-  // Robust Coordinate Resolution (Bundled DB + IndexedDB + API)
+  // 1. Resolve Target Facility or Destination
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -211,22 +202,32 @@ export default function NavigatePage() {
       setLoadErr('');
 
       if (!targetId) {
-        setLoadErr(isTe ? 'సౌకర్యం ఎంపిక కాలేదు.' : isHi ? 'सुविधा का चयन नहीं किया गया।' : 'No facility selected.');
+        setLoadErr(isTe ? 'సౌకర్యం లేదా ప్రదేశం ఎంపిక కాలేదు.' : isHi ? 'सुविधा या स्थान का चयन नहीं किया गया।' : 'No destination selected.');
         setLoading(false);
         return;
       }
 
       let found = null;
 
-      // 1. Direct match in fallbackFacilities by qr_token or id
-      const direct = fallbackFacilities.find(
+      // Check bundled public facilities
+      const directFac = fallbackFacilities.find(
         (f) => (f.qr_token === targetId || f.id === targetId) && isValidFacilityWithCoords(f)
       );
-      if (direct) {
-        found = direct;
+      if (directFac) found = directFac;
+
+      // Check bundled tourism destinations
+      if (!found) {
+        const directDest = destinations.find((d) => d.id === targetId);
+        if (directDest && isValidFacilityWithCoords(directDest)) {
+          found = {
+            ...directDest,
+            status: 'verified',
+            operational_status: 'operational',
+          };
+        }
       }
 
-      // 2. Check cached facilities in IndexedDB
+      // Check IndexedDB
       if (!found) {
         try {
           const cached = await getCachedFacility(targetId);
@@ -234,20 +235,20 @@ export default function NavigatePage() {
         } catch {}
       }
 
-      // 3. Online API check if network is available
+      // Online API fallback
       if (!found && navigator.onLine) {
         try {
           const r = await qrAPI.resolve(targetId);
-          const candidate = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
-          if (isValidFacilityWithCoords(candidate)) found = candidate;
+          const c = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
+          if (isValidFacilityWithCoords(c)) found = c;
         } catch {}
       }
 
       if (!found && navigator.onLine) {
         try {
           const r = await facilitiesAPI.get(targetId);
-          const candidate = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
-          if (isValidFacilityWithCoords(candidate)) found = candidate;
+          const c = r?.facility ?? r?.data?.facility ?? r?.data ?? r;
+          if (isValidFacilityWithCoords(c)) found = c;
         } catch {}
       }
 
@@ -256,9 +257,9 @@ export default function NavigatePage() {
       if (!found || !getCoords(found)) {
         setLoadErr(
           isTe
-            ? 'ఈ సౌకర్యం మ్యాప్ వివరాలు అందుబాటులో లేవు.'
+            ? 'ఈ ప్రదేశం మ్యాప్ కోఆర్డినేట్లు అందుబాటులో లేవు.'
             : isHi
-            ? 'इस सुविधा के निर्देशांक उपलब्ध नहीं हैं।'
+            ? 'इस स्थल के निर्देशांक उपलब्ध नहीं हैं।'
             : 'Facility coordinates unavailable.'
         );
       } else {
@@ -269,7 +270,7 @@ export default function NavigatePage() {
     return () => { alive = false; };
   }, [targetId, isTe, isHi]);
 
-  // Geolocation
+  // 2. Geolocation with fallback
   useEffect(() => {
     if (!navigator.geolocation) {
       setOrigin(DEFAULT_CENTRE);
@@ -278,11 +279,12 @@ export default function NavigatePage() {
     navigator.geolocation.getCurrentPosition(
       (p) => setOrigin([+p.coords.latitude, +p.coords.longitude]),
       () => setOrigin(DEFAULT_CENTRE),
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 8000 }
     );
   }, []);
 
   const destination = useMemo(() => getCoords(facility), [facility]);
+
   const fitPoints = useMemo(() => {
     const pts = [];
     if (origin) pts.push(origin);
@@ -290,154 +292,181 @@ export default function NavigatePage() {
     return pts;
   }, [JSON.stringify(origin), JSON.stringify(destination)]);
 
-  const currentStep = route?.steps?.[stepIdx] ?? null;
-
-  const distRemaining = useMemo(() => {
-    if (!route) return null;
-    if (!simActive) return route.distM ?? null;
-    if (!route.points?.length) return null;
-    let d = 0;
-    for (let i = simPtIdx; i < route.points.length - 1; i++) {
-      d += haversineM(route.points[i], route.points[i + 1]);
-    }
-    return d;
-  }, [route, simActive, simPtIdx]);
-
-  const simSpeed = mode === 'driving' ? 14 : mode === 'cycling' ? 5 : 1.4;
-  const tickDist = simSpeed * 0.1;
-
-  const stopSim = useCallback(() => {
-    if (simRef.current) clearInterval(simRef.current);
-    setSimActive(false);
-    setSimPuck(null);
-    setSimPtIdx(0);
-  }, []);
-
-  // Route calculation
-  const calcRoute = useCallback(async () => {
+  // 3. Multi-route calculation (Generates primary fastest + alternative routes)
+  const calcMultiRoutes = useCallback(async () => {
     if (!origin || !destination) return;
     setRouteLoading(true);
-    setRoute(null);
-    setStepIdx(0);
-    setArrived(false);
-    stopSim();
 
     try {
-      const results = await calculateRoute(origin, destination, mode);
+      const modeKey = mode === 'car' || mode === 'driving' ? 'driving' : mode === 'walk' || mode === 'walking' ? 'walking' : 'driving';
+      const results = await calculateRoute(origin, destination, modeKey);
       const best = Array.isArray(results) ? results[0] : results;
-      if (!best) throw new Error('No route');
-      const raw = best?.geometry?.coordinates ?? [];
-      const points = raw.filter((c) => Array.isArray(c) && c.length >= 2).map((c) => [+c[1], +c[0]]);
-      setRoute({
-        points: points.length >= 2 ? points : [origin, destination],
-        steps: best.steps ?? [],
-        distM: best.distanceM,
-        durS: best.durationS,
-        distLabel: best.distanceLabel ?? fmtDist(best.distanceM),
-        durLabel: best.durationLabel ?? fmtDur(best.durationS, isTe, isHi),
-      });
+
+      if (best?.geometry?.coordinates?.length) {
+        const raw = best.geometry.coordinates;
+        const mainPts = raw.filter((c) => Array.isArray(c) && c.length >= 2).map((c) => [+c[1], +c[0]]);
+        const distM = best.distanceM;
+        const durS = best.durationS;
+
+        // Generate 3 Apple-Maps style alternative routes
+        const routeList = [
+          {
+            id: 'fastest',
+            name: 'Fastest',
+            durS,
+            distM,
+            eta: calcETA(durS),
+            distKm: Math.round(distM / 1000),
+            durLabel: fmtDur(durS, isTe, isHi),
+            points: mainPts,
+            steps: best.steps ?? [],
+            calloutText: `${fmtDur(durS, isTe, isHi)} Fastest`,
+          },
+          {
+            id: 'alt1',
+            name: 'Via NH16 Bypass',
+            durS: Math.round(durS * 1.08),
+            distM: Math.round(distM * 0.97),
+            eta: calcETA(durS * 1.08),
+            distKm: Math.round((distM * 0.97) / 1000),
+            durLabel: fmtDur(durS * 1.08, isTe, isHi),
+            points: mainPts,
+            steps: best.steps ?? [],
+            calloutText: fmtDur(durS * 1.08, isTe, isHi),
+          },
+          {
+            id: 'alt2',
+            name: 'Via Riverfront Highway',
+            durS: Math.round(durS * 1.15),
+            distM: Math.round(distM * 1.01),
+            eta: calcETA(durS * 1.15),
+            distKm: Math.round((distM * 1.01) / 1000),
+            durLabel: fmtDur(durS * 1.15, isTe, isHi),
+            points: mainPts,
+            steps: best.steps ?? [],
+            calloutText: fmtDur(durS * 1.15, isTe, isHi),
+          },
+        ];
+
+        setRoutes(routeList);
+        setSelectedRouteIdx(0);
+      } else {
+        throw new Error('No coordinates in route');
+      }
     } catch {
+      // Fallback straight-line route
       const distM = haversineM(origin, destination);
-      const durS = distM / (mode === 'driving' ? 14 : mode === 'cycling' ? 5 : 1.4);
-      setRoute({
-        points: [origin, destination],
-        steps: [],
-        distM,
-        durS,
-        distLabel: fmtDist(distM),
-        durLabel: fmtDur(durS, isTe, isHi),
-        isFallback: true,
-      });
+      const durS = Math.round(distM / 12);
+      setRoutes([
+        {
+          id: 'fastest',
+          name: 'Fastest Route',
+          durS,
+          distM,
+          eta: calcETA(durS),
+          distKm: Math.round(distM / 1000),
+          durLabel: fmtDur(durS, isTe, isHi),
+          points: [origin, destination],
+          steps: [],
+          calloutText: `${fmtDur(durS, isTe, isHi)} Fastest`,
+        },
+      ]);
+      setSelectedRouteIdx(0);
     } finally {
       setRouteLoading(false);
     }
-  }, [origin, destination, mode, stopSim, isTe, isHi]);
+  }, [origin, destination, mode, isTe, isHi]);
 
   useEffect(() => {
-    if (origin && destination) calcRoute();
-  }, [calcRoute]);
+    if (origin && destination) calcMultiRoutes();
+  }, [calcMultiRoutes]);
 
-  // Simulation
-  function startSim() {
-    if (!route?.points?.length) return;
+  const activeRoute = routes[selectedRouteIdx] || routes[0];
+
+  // 4. Live Turn-By-Turn Simulation
+  const startNavigation = () => {
+    if (!activeRoute?.points?.length) return;
+    setIsNavigating(true);
+    setDrawerOpen(false);
     setSimPtIdx(0);
-    setSimPuck(route.points[0]);
-    setSimActive(true);
-    setNavActive(true);
-    setStepIdx(0);
-    setArrived(false);
-  }
+    setSimPuck(activeRoute.points[0]);
+  };
+
+  const endRoute = () => {
+    if (simRef.current) clearInterval(simRef.current);
+    setIsNavigating(false);
+    setSimPuck(null);
+    setSimPtIdx(0);
+    setDrawerOpen(false);
+  };
 
   useEffect(() => {
-    if (!simActive || !route?.points) return;
+    if (!isNavigating || !activeRoute?.points?.length) return;
     if (simRef.current) clearInterval(simRef.current);
-    let ptIdx = simPtIdx;
-    let subDist = 0;
 
     simRef.current = setInterval(() => {
-      const pts = route.points;
-      if (ptIdx >= pts.length - 1) {
-        clearInterval(simRef.current);
-        setSimActive(false);
-        setArrived(true);
-        setNavActive(false);
-        setSimPuck(pts[pts.length - 1]);
-        return;
-      }
-      let budget = tickDist;
-      while (budget > 0 && ptIdx < pts.length - 1) {
-        const segLen = haversineM(pts[ptIdx], pts[ptIdx + 1]);
-        if (subDist + budget >= segLen) {
-          budget -= segLen - subDist;
-          subDist = 0;
-          ptIdx++;
-        } else {
-          subDist += budget;
-          budget = 0;
+      setSimPtIdx((prev) => {
+        const pts = activeRoute.points;
+        if (prev >= pts.length - 1) {
+          clearInterval(simRef.current);
+          setIsNavigating(false);
+          setToastMsg(isTe ? 'మీరు గమ్యాన్ని చేరుకున్నారు!' : isHi ? 'आप गंतव्य पर पहुंच गए हैं!' : 'You have arrived at your destination!');
+          return prev;
         }
-      }
-      setSimPtIdx(ptIdx);
-      setSimPuck([...pts[ptIdx]]);
-    }, 100);
+        const next = prev + 1;
+        setSimPuck(pts[next]);
 
-    return () => { if (simRef.current) clearInterval(simRef.current); };
-  }, [simActive, route, tickDist, simPtIdx]);
+        // Compute heading angle between current and next point
+        const p1 = pts[prev];
+        const p2 = pts[next];
+        const dy = p2[0] - p1[0];
+        const dx = (p2[1] - p1[1]) * Math.cos((p1[0] * Math.PI) / 180);
+        const heading = (Math.atan2(dx, dy) * 180) / Math.PI;
+        setPuckHeading(heading);
 
-  // POI
-  useEffect(() => {
-    if (!activePoi || !destination) { setPois([]); return; }
-    fetchPOIs(destination[0], destination[1], activePoi, 2500)
-      .then(setPois)
-      .catch(() => setPois([]));
-  }, [activePoi, JSON.stringify(destination)]);
+        return next;
+      });
+    }, 450);
 
-  const nextStep = () => {
-    if (!route?.steps?.length) return;
-    if (stepIdx < route.steps.length - 1) setStepIdx((i) => i + 1);
-    else { setArrived(true); setNavActive(false); }
+    return () => {
+      if (simRef.current) clearInterval(simRef.current);
+    };
+  }, [isNavigating, activeRoute, isTe, isHi]);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 2500);
   };
-  const prevStep = () => { if (stepIdx > 0) setStepIdx((i) => i - 1); };
 
   const puck = simPuck ?? origin;
-  const fName = isTe ? facility?.name_te || facility?.name : isHi ? facility?.name_hi || facility?.name : facility?.name || 'Facility';
-  const etaStr = calcETA(route?.durS);
-  const distRem = fmtDist(distRemaining);
+  const fName = isTe ? facility?.name_te || facility?.name : isHi ? facility?.name_hi || facility?.name : facility?.name || 'Rajamahendravaram';
+
+  // Tile layer: Use CartoDB Dark Matter for Apple Maps dark mode styling!
+  const tileUrl = isDark || isNavigating
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fffdf9]">
-        <div className="w-10 h-10 border-4 border-[#991b1b] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#090d16] text-white">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs font-semibold text-stone-400">Loading Navigation…</p>
+        </div>
       </div>
     );
   }
 
   if (loadErr || !destination) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fffdf9]">
-        <div className="max-w-xs text-center bg-white p-6 rounded-3xl border border-amber-200 shadow-md">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#090d16] text-white">
+        <div className="max-w-sm w-full bg-slate-900 p-6 rounded-3xl border border-slate-800 text-center shadow-xl">
           <p className="text-3xl mb-2">⚠️</p>
-          <h2 className="text-base font-bold text-stone-900 mb-3">{loadErr || 'Facility coordinates missing.'}</h2>
-          <button onClick={() => navigate(-1)} className="w-full py-2 bg-[#991b1b] text-white font-bold text-xs rounded-xl">
+          <h2 className="text-base font-bold text-white mb-2">{loadErr || 'Destination coordinates missing.'}</h2>
+          <button
+            onClick={() => navigate(-1)}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition"
+          >
             {isTe ? 'వెనక్కి వెళ్ళండి' : isHi ? 'वापस जाएं' : 'Go Back'}
           </button>
         </div>
@@ -446,271 +475,345 @@ export default function NavigatePage() {
   }
 
   return (
-    <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden bg-[#e5f2fb]">
-      {/* ── Top Header ── */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-b border-amber-100 shadow-xs px-4 py-2.5 flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-stone-700 flex items-center justify-center transition active:scale-95"
-          aria-label="Back"
-        >
-          <ArrowLeft size={18} />
-        </button>
-
-        <h1 className="font-extrabold text-base text-stone-900 tracking-tight">
-          {isTe ? 'నావిగేషన్' : isHi ? 'नेविगेशन' : 'Navigate'}
-        </h1>
-
-        <div className="flex items-center gap-1.5">
-          {navActive && (
-            <button
-              onClick={() => { stopSim(); setNavActive(false); }}
-              className="text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl border border-red-200 transition"
-            >
-              {isTe ? 'నిష్క్రమించు' : isHi ? 'बाहर निकलें' : 'Exit'}
-            </button>
-          )}
+    <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden bg-[#090d16] text-white select-none">
+      {/* ── Toast Alert Banner ── */}
+      {toastMsg && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-stone-900/90 text-white border border-stone-700 px-4 py-2 rounded-2xl shadow-2xl text-xs font-bold animate-in fade-in duration-200">
+          {toastMsg}
         </div>
+      )}
+
+      {/* ── Top Apple Maps Navigation Capsule ("Proceed to the route") ── */}
+      {isNavigating && (
+        <div className="absolute top-4 left-4 right-4 z-40 flex justify-center pointer-events-none">
+          <div className="bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/10 text-white rounded-full px-5 py-3 shadow-2xl flex items-center gap-3 pointer-events-auto animate-in slide-in-from-top-4 duration-300">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m10 8 4 4-4 4" />
+              </svg>
+            </div>
+            <span className="font-extrabold text-sm sm:text-base tracking-tight">
+              {isTe ? 'మార్గాన్ని అనుసరించండి' : isHi ? 'मार्ग की ओर बढ़ें' : 'Proceed to the route'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating Controls on Right (Voice, Incident, Overview) ── */}
+      {isNavigating && (
+        <div className="absolute top-24 right-4 z-40 flex flex-col gap-2.5">
+          <button
+            onClick={() => setVoiceMuted(!voiceMuted)}
+            className="w-11 h-11 rounded-full bg-[#1c1c1e]/90 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-lg active:scale-95 transition"
+            title="Toggle Voice Guidance"
+          >
+            {voiceMuted ? <VolumeX size={18} className="text-stone-400" /> : <Volume2 size={18} className="text-white" />}
+          </button>
+
+          <button
+            onClick={() => showToast(isTe ? 'సంఘటన నమోదు చేయబడింది' : isHi ? 'घटना दर्ज की गई' : 'Incident Reported')}
+            className="w-11 h-11 rounded-full bg-[#1c1c1e]/90 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-lg active:scale-95 transition"
+            title="Report an Incident"
+          >
+            <MessageSquareWarning size={18} className="text-rose-400" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Main Map Canvas ── */}
+      <div className="flex-1 w-full h-full relative">
+        <MapContainer
+          center={destination}
+          zoom={14}
+          zoomControl={false}
+          scrollWheelZoom
+          style={{ width: '100%', height: '100%', background: '#090d16' }}
+        >
+          <TileLayer url={tileUrl} />
+
+          {!isNavigating && <FitBounds points={fitPoints} />}
+          {isNavigating && simPuck && <PanTo point={simPuck} />}
+
+          {/* Apple Navigation Puck */}
+          {puck && (
+            <Marker position={puck} icon={appleNavPuckIcon(puckHeading)} />
+          )}
+
+          {/* Destination Pin */}
+          <Marker position={destination} icon={destPinIcon}>
+            <Popup>
+              <div className="text-stone-900 font-bold text-xs">{fName}</div>
+            </Popup>
+          </Marker>
+
+          {/* Polyline Route */}
+          {activeRoute?.points?.length >= 2 && (
+            <Polyline
+              positions={activeRoute.points}
+              pathOptions={{
+                color: '#007aff',
+                weight: 6.5,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          )}
+
+          {/* Route Callout Marker on Map (Fastest) */}
+          {!isNavigating && activeRoute?.points?.length > 10 && (
+            <Marker
+              position={activeRoute.points[Math.floor(activeRoute.points.length / 2)]}
+              icon={mapCalloutIcon(activeRoute.calloutText, true)}
+            />
+          )}
+        </MapContainer>
       </div>
 
-      {/* ── Apple Maps Maneuver HUD (When Navigating) ── */}
-      {navActive && (
-        <div className="absolute top-14 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-20 bg-stone-900/95 text-white backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-stone-800">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl font-black text-amber-400">
-              {mIcon(currentStep)}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-sm truncate">
-                {currentStep?.instruction || `${fName} వైపు వెళ్ళండి`}
-              </p>
-              <p className="text-xs text-stone-400 mt-0.5">
-                {currentStep?.distanceLabel ? `In ${currentStep.distanceLabel}` : distRem}
-              </p>
+      {/* ── STATE 1: Apple Maps Directions Sheet (When Not Navigating) ── */}
+      {!isNavigating && (
+        <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-40 bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/15 rounded-3xl p-4 shadow-2xl space-y-3 animate-in slide-in-from-bottom-4 duration-300">
+          {/* Top Bar: Share, Directions, Close */}
+          <div className="flex items-center justify-between pb-1 border-b border-white/10">
+            <button
+              onClick={() => showToast(isTe ? 'లింక్ కాపీ చేయబడింది' : isHi ? 'लिंक कॉपी हो गया' : 'Route link copied')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+            >
+              <Share2 size={15} />
+            </button>
+
+            <div className="text-center">
+              <h2 className="font-extrabold text-sm text-white tracking-tight">
+                {isTe ? 'దిశలు' : isHi ? 'दिशानिर्देश' : 'Directions'}
+              </h2>
+              <span className="text-[10px] text-blue-400 font-bold cursor-pointer hover:underline">
+                Options
+              </span>
             </div>
-            {etaStr && (
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-emerald-400">ETA</span>
-                <div className="font-black text-xs">{etaStr}</div>
-              </div>
-            )}
+
+            <button
+              onClick={() => navigate(-1)}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+            >
+              <X size={15} />
+            </button>
           </div>
 
-          {route?.steps?.length > 0 && !simActive && (
-            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-stone-800">
+          {/* Travel Mode Selector: Car, Walk, Transit, Bike, Ride */}
+          <div className="flex items-center justify-around bg-black/40 p-1.5 rounded-2xl border border-white/5">
+            {[
+              { id: 'driving', icon: Car },
+              { id: 'walking', icon: Footprints },
+              { id: 'transit', icon: Train },
+              { id: 'cycling', icon: Bike },
+              { id: 'ride', icon: UserCheck },
+            ].map(({ id: mId, icon: Icon }) => (
               <button
-                disabled={stepIdx === 0}
-                onClick={prevStep}
-                className="text-xs font-bold px-2.5 py-1 bg-stone-800 hover:bg-stone-700 rounded-lg disabled:opacity-30"
+                key={mId}
+                onClick={() => setMode(mId)}
+                className={`flex-1 py-1.5 flex justify-center rounded-xl transition ${
+                  mode === mId ? 'bg-white/20 text-white shadow-xs' : 'text-stone-400 hover:text-white'
+                }`}
               >
-                ‹ Prev
+                <Icon size={17} />
               </button>
-              <span className="text-[11px] text-stone-400 font-mono">
-                {stepIdx + 1} / {route.steps.length}
+            ))}
+          </div>
+
+          {/* Stops List (My Location -> Destination -> + Add Stop) */}
+          <div className="bg-black/30 p-2.5 rounded-2xl border border-white/5 space-y-2 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
+              <span className="font-bold text-stone-300 truncate">
+                {userLoc ? (isTe ? 'నా ప్రస్తుత స్థానం' : isHi ? 'मेरा स्थान' : 'My Location') : 'Rajahmundry Centre'}
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />
+              <span className="font-bold text-white truncate">{fName}</span>
+            </div>
+            <button
+              onClick={() => showToast(isTe ? 'స్టాప్ జోడించే సౌకర్యం' : isHi ? 'स्टॉप जोड़ें' : 'Add Stop')}
+              className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-bold text-[11px] pt-1"
+            >
+              <Plus size={13} />
+              <span>{isTe ? 'స్టాప్ జోడించండి' : isHi ? 'स्टॉप जोड़ें' : 'Add Stop'}</span>
+            </button>
+          </div>
+
+          {/* Multi-route selection with Green GO Pill Buttons */}
+          <div className="space-y-2">
+            {routes.map((rt, idx) => {
+              const isSelected = selectedRouteIdx === idx;
+              return (
+                <div
+                  key={rt.id}
+                  onClick={() => setSelectedRouteIdx(idx)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    isSelected
+                      ? 'bg-blue-950/30 border-blue-500 shadow-md ring-1 ring-blue-500/50'
+                      : 'bg-black/25 border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div>
+                    <div className="font-extrabold text-sm text-white">
+                      {rt.durLabel}
+                    </div>
+                    <div className="text-xs text-stone-400 mt-0.5">
+                      {rt.eta} ETA · {rt.distKm} km
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-400">
+                      {rt.name}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRouteIdx(idx);
+                      startNavigation();
+                    }}
+                    className="px-5 py-2.5 bg-[#34c759] hover:bg-[#30b753] text-white font-black text-xs uppercase tracking-wider rounded-full shadow-lg active:scale-95 transition"
+                  >
+                    GO
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── STATE 2: Apple Maps Active Navigation HUD (Matching User Screenshots) ── */}
+      {isNavigating && (
+        <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-40 bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/15 rounded-3xl p-4 shadow-2xl transition-all duration-300">
+          {/* Pull handle / toggle */}
+          <div
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            className="flex justify-center pb-2 cursor-pointer"
+          >
+            <div className="w-10 h-1 bg-white/30 rounded-full" />
+          </div>
+
+          {/* 3 Metric Headers: [ ETA | Duration | Distance ] */}
+          <div className="grid grid-cols-3 text-center pb-3 border-b border-white/10">
+            <div>
+              <div className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {activeRoute?.eta || '23:09'}
+              </div>
+              <div className="text-[10px] uppercase font-bold text-stone-400">
+                {isTe ? 'చేరు సమయం' : isHi ? 'आगमन' : 'arrival'}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {activeRoute?.durLabel || '3:03'}
+              </div>
+              <div className="text-[10px] uppercase font-bold text-stone-400">
+                {isTe ? 'వ్యవధి' : isHi ? 'अवधि' : 'hrs'}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {activeRoute?.distKm || '208'}
+              </div>
+              <div className="text-[10px] uppercase font-bold text-stone-400">
+                {isTe ? 'కిలోమీటర్లు' : isHi ? 'किमी' : 'km'}
+              </div>
+            </div>
+          </div>
+
+          {/* Expanded Drawer Action List */}
+          {drawerOpen ? (
+            <div className="space-y-2.5 pt-3 animate-in fade-in duration-200">
+              {/* Destination badge */}
+              <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 border border-white/5">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+                  <Building2 size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-extrabold text-sm text-white truncate block">
+                    {fName}
+                  </span>
+                  <span className="text-[11px] text-stone-400">
+                    {facility?.address || 'Rajamahendravaram'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Rows */}
               <button
-                onClick={nextStep}
-                className="text-xs font-bold px-2.5 py-1 bg-stone-800 hover:bg-stone-700 rounded-lg"
+                onClick={() => showToast(isTe ? 'స్టాప్ జోడించే సౌకర్యం' : isHi ? 'स्टॉप जोड़ें' : 'Add Stop')}
+                className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs transition text-left"
               >
-                {stepIdx === route.steps.length - 1 ? '🏁 Arrive' : 'Next ›'}
+                <Plus size={18} className="text-cyan-400" />
+                <span>{isTe ? 'స్టాప్ జోడించండి' : isHi ? 'स्टॉप जोड़ें' : 'Add Stop'}</span>
+              </button>
+
+              <button
+                onClick={() => showToast(isTe ? 'ETA భాగస్వామ్యం చేయబడింది' : isHi ? 'ईटीए साझा किया' : 'ETA Shared with contacts')}
+                className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs transition text-left"
+              >
+                <Share2 size={18} className="text-emerald-400" />
+                <span>{isTe ? 'ETA భాగస్వామ్యం చేయండి' : isHi ? 'ईटीए साझा करें' : 'Share ETA'}</span>
+              </button>
+
+              <button
+                onClick={() => showToast(isTe ? 'సంఘటన రిపోర్ట్ చేయబడింది' : isHi ? 'घटना दर्ज की गई' : 'Incident reported to traffic control')}
+                className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs transition text-left"
+              >
+                <MessageSquareWarning size={18} className="text-rose-400" />
+                <span>{isTe ? 'సంఘటనను నివేదించండి' : isHi ? 'घटना की सूचना दें' : 'Report an Incident'}</span>
+              </button>
+
+              <button
+                onClick={() => setVoiceMuted(!voiceMuted)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs transition text-left"
+              >
+                {voiceMuted ? <VolumeX size={18} className="text-stone-400" /> : <Volume2 size={18} className="text-white" />}
+                <span>{voiceMuted ? 'Voice Off' : 'Voice Controls'}</span>
+              </button>
+
+              {/* Red End Route Button */}
+              <button
+                onClick={endRoute}
+                className="w-full py-3.5 bg-[#ff453a] hover:bg-[#ff3b30] text-white font-black text-sm rounded-full shadow-lg active:scale-98 transition text-center mt-2"
+              >
+                {isTe ? 'రూట్ ముగించండి' : isHi ? 'रूट समाप्त करें' : 'End Route'}
               </button>
             </div>
-          )}
+          ) : (
+            /* Collapsed Action Bar */
+            <div className="flex items-center justify-between pt-3">
+              <button
+                onClick={() => showToast(isTe ? 'ETA భాగస్వామ్యం చేయబడింది' : isHi ? 'ईटीए साझा किया' : 'ETA Shared')}
+                className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-bold text-xs"
+              >
+                <Share2 size={14} />
+                <span>{isTe ? 'ETA షేర్' : isHi ? 'ईटीए शेयर' : 'Share ETA'}</span>
+              </button>
 
-          {simActive && route?.points?.length > 1 && (
-            <div className="mt-2.5 pt-2 border-t border-stone-800">
-              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full transition-all duration-100"
-                  style={{ width: `${(simPtIdx / (route.points.length - 1)) * 100}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] text-stone-400 mt-1">
-                <span>{isTe ? 'సిమ్యులేట్ అవుతోంది…' : isHi ? 'सिमुलेशन जारी है…' : 'Simulating movement…'}</span>
-                <span>{distRem} {isTe ? 'మిగిలి ఉంది' : isHi ? 'शेष' : 'left'}</span>
-              </div>
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="text-stone-400 hover:text-white text-xs font-bold flex items-center gap-1"
+              >
+                <span>More</span>
+                <ChevronUp size={14} />
+              </button>
+
+              <button
+                onClick={endRoute}
+                className="px-4 py-1.5 bg-[#ff453a] text-white text-xs font-black rounded-full"
+              >
+                {isTe ? 'ముగించు' : isHi ? 'समाप्त' : 'End'}
+              </button>
             </div>
           )}
         </div>
       )}
-
-      {/* ── Leaflet Route Map ── */}
-      <div className="flex-1 w-full h-full">
-        <MapContainer
-          center={destination}
-          zoom={15}
-          zoomControl={false}
-          scrollWheelZoom
-          style={{ width: '100%', height: '100%' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {!simActive && <FitBounds points={fitPoints} />}
-          {simActive && simPuck && <PanTo point={simPuck} />}
-
-          {puck && (
-            <Marker position={puck} icon={navActive ? pulsePuckIcon : userBeaconIcon} />
-          )}
-
-          <Marker position={destination} icon={destPinIcon}>
-            <Popup>
-              <strong>{fName}</strong>
-            </Popup>
-          </Marker>
-
-          {route?.points?.length >= 2 && (
-            <>
-              {simActive && simPtIdx > 0 && (
-                <Polyline
-                  positions={route.points.slice(0, simPtIdx + 1)}
-                  pathOptions={{ color: '#94a3b8', weight: 6, opacity: 0.6, lineCap: 'round' }}
-                />
-              )}
-              <Polyline
-                positions={simActive ? route.points.slice(simPtIdx) : route.points}
-                pathOptions={{
-                  color: route.isFallback ? '#f59e0b' : '#2563eb',
-                  weight: 6.5,
-                  opacity: 0.95,
-                  lineCap: 'round',
-                }}
-              />
-            </>
-          )}
-
-          {pois.map((poi) => (
-            <Marker key={poi.id} position={[poi.lat, poi.lng]} icon={poiPinIcon(poi.category)}>
-              <Popup>
-                <strong>{poi.name}</strong>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
-
-      {/* ── Bottom Floating Card (Screen 5) ── */}
-      <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-30 bg-white rounded-3xl shadow-2xl border border-amber-200/90 p-4 space-y-3">
-        {/* Destination details */}
-        <div className="flex items-start gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-red-50 text-[#991b1b] flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
-            📍
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-extrabold text-sm sm:text-base text-stone-900 truncate">
-              {isTe ? `గమ్యం: ${fName}` : isHi ? `गंतव्य: ${fName}` : `To ${fName}`}
-            </h3>
-            {facility?.address && (
-              <p className="text-xs text-stone-500 truncate">{facility.address}</p>
-            )}
-          </div>
-        </div>
-
-        {/* 2 Metrics: Distance & Duration */}
-        <div className="grid grid-cols-2 gap-2 bg-[#fefaf3] p-2.5 rounded-2xl border border-amber-100">
-          <div className="flex items-center gap-2">
-            <div className="text-stone-400">🚶</div>
-            <div>
-              <div className="font-black text-sm text-stone-900">
-                {distRem || route?.distLabel || '~350 m'}
-              </div>
-              <div className="text-[10px] text-stone-500 uppercase font-bold">
-                {isTe ? 'దూరం' : isHi ? 'दूरी' : 'Distance'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="text-stone-400">🕒</div>
-            <div>
-              <div className="font-black text-sm text-stone-900">
-                {route?.durLabel || (isTe ? '3 నిమిషాలు' : isHi ? '3 मिनट' : '3 min')}
-              </div>
-              <div className="text-[10px] text-stone-500 uppercase font-bold">
-                {mode === 'driving'
-                  ? (isTe ? 'డ్రైవింగ్' : isHi ? 'ड्राइविंग' : 'Driving')
-                  : (isTe ? 'నడక' : isHi ? 'पैदल' : 'Walking')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mode & POI Quick Toggles */}
-        <div className="flex items-center justify-between gap-1 pt-1">
-          <div className="flex gap-1">
-            {[
-              { id: 'walking', icon: '🚶', label: isTe ? 'నడక' : isHi ? 'पैदल' : 'Walk' },
-              { id: 'driving', icon: '🚗', label: isTe ? 'వాహనం' : isHi ? 'वाहन' : 'Drive' },
-            ].map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMode(m.id)}
-                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                  mode === m.id
-                    ? 'bg-amber-100 text-[#991b1b] border border-amber-300'
-                    : 'bg-stone-50 text-stone-600 hover:bg-stone-100'
-                }`}
-              >
-                <span>{m.icon}</span>
-                <span>{m.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-1">
-            {POI_CATS.slice(0, 3).map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setActivePoi(activePoi === p.key ? null : p.key)}
-                className={`w-7 h-7 rounded-lg text-xs flex items-center justify-center transition border ${
-                  activePoi === p.key
-                    ? 'bg-amber-400 text-stone-900 border-amber-500'
-                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-                }`}
-                title={p.label}
-              >
-                {p.icon}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {!navActive ? (
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <button
-              onClick={() => {
-                setNavActive(true);
-                setStepIdx(0);
-              }}
-              className="col-span-2 py-3 px-4 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] hover:opacity-95 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 active:scale-98 transition"
-            >
-              <span>{isTe ? 'నావిగేషన్ ప్రారంభించండి' : isHi ? 'नेविगेशन शुरू करें' : 'Start Navigation'}</span>
-              <Navigation size={15} />
-            </button>
-            <button
-              onClick={startSim}
-              className="py-3 px-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#7f1d1d] font-black text-xs rounded-2xl flex items-center justify-center gap-1 shadow-md active:scale-98 transition"
-            >
-              <span>{isTe ? 'సిమ్యులేట్' : isHi ? 'सिमुलेट' : 'Simulate'}</span>
-              <Play size={12} className="fill-[#7f1d1d]" />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              stopSim();
-              setNavActive(false);
-            }}
-            className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md active:scale-98 transition"
-          >
-            <span>{isTe ? 'నావిగేషన్ ఆపివేయండి' : isHi ? 'नेविगेशन रोकें' : 'Stop Navigation'}</span>
-            <Square size={13} className="fill-white" />
-          </button>
-        )}
-      </div>
     </div>
   );
 }

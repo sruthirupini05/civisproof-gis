@@ -98,8 +98,38 @@ body {
 
 /* Animations */
 @keyframes pulse-ring {
-  0% { transform: scale(0.6); opacity: 0.8; }
-  80%, 100% { transform: scale(2.2); opacity: 0; }
+  0% { transform: scale(0.9); opacity: 0.9; }
+  50% { transform: scale(1.45); opacity: 0.3; }
+  100% { transform: scale(0.9); opacity: 0.9; }
+}
+
+/* Dark Theme Support */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #090d16;
+  color: #f8fafc;
+}
+
+html.dark .leaflet-container {
+  background: #090d16 !important;
+}
+
+html.dark .leaflet-control-zoom {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .leaflet-control-zoom a {
+  background: #1e293b !important;
+  color: #fca5a5 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+html.dark .leaflet-control-zoom a:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
 }
 
 .animate-pulse-ring {

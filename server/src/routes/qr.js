@@ -10,7 +10,7 @@ const BASE_URL = process.env.BASE_URL || 'https://civisproof-gis.vercel.app';
 router.get('/resolve/:token', (req, res) => {
   const db = getDB();
   const facility = db.prepare(
-    'SELECT id, qr_token, name, name_te, name_hi, category, lat, lng, address, status, operational_status, description, description_te, description_hi, last_inspected, last_updated, is_verified, data_source FROM facilities WHERE qr_token = ?'
+    'SELECT id, qr_token, name, name_te, name_hi, category, transport_type, lat, lng, address, status, operational_status, capacity, description, description_te, description_hi, last_inspected, last_updated, is_verified, data_source FROM facilities WHERE qr_token = ?'
   ).get(req.params.token);
   if (!facility) return res.status(404).json({ error: 'QR code not found or invalid' });
   res.json(facility);

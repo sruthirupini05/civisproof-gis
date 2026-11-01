@@ -1,21 +1,28 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer } from 'lucide-react';
-import { useAuthStore, useLanguageStore } from '../../store/useStore.js';
+import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer, Sun, Moon, Monitor, Compass } from 'lucide-react';
+import { useAuthStore, useLanguageStore, useThemeStore } from '../../store/useStore.js';
 import LanguageSelector from './LanguageSelector.jsx';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const { user, clearAuth } = useAuthStore();
   const { currentLang } = useLanguageStore();
+  const { mode, isDark, setMode } = useThemeStore();
   const navigate = useNavigate();
 
   const isTe = (currentLang || i18n.language || 'te').startsWith('te');
   const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
 
+  const cycleTheme = () => {
+    if (mode === 'auto') setMode('dark');
+    else if (mode === 'dark') setMode('light');
+    else setMode('auto');
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#fffdf9] text-stone-900 font-sans">
+    <div className="min-h-screen flex flex-col bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-stone-100 font-sans transition-colors duration-200">
       {/* ── Sacred Pushkaram Header ── */}
       <header className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white shadow-md sticky top-0 z-40 border-b border-amber-500/20">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
@@ -47,8 +54,52 @@ export default function Layout() {
             </div>
           </NavLink>
 
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 bg-black/15 p-1 rounded-2xl border border-white/10">
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  isActive ? 'bg-white text-[#7f1d1d] shadow-xs' : 'text-amber-100 hover:text-white'
+                }`
+              }
+            >
+              <Map size={13} />
+              <span>{isTe ? 'సౌకర్యాలు' : isHi ? 'सुविधाएं' : 'Find Facilities'}</span>
+            </NavLink>
+            <NavLink
+              to="/explore"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  isActive ? 'bg-white text-[#7f1d1d] shadow-xs' : 'text-amber-100 hover:text-white'
+                }`
+              }
+            >
+              <Compass size={13} />
+              <span>{isTe ? 'పర్యాటక అన్వేషణ' : isHi ? 'अन्वेषण' : 'Explore Nearby'}</span>
+            </NavLink>
+          </nav>
+
           {/* Right Header Utilities */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={cycleTheme}
+              className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
+              title={`Theme: ${mode} (${isDark ? 'Dark' : 'Light'})`}
+              aria-label="Toggle theme mode"
+            >
+              {mode === 'auto' ? (
+                <Monitor size={14} className="text-amber-300" />
+              ) : isDark ? (
+                <Moon size={14} className="text-amber-300" />
+              ) : (
+                <Sun size={14} className="text-amber-300" />
+              )}
+              <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">
+                {mode === 'auto' ? 'Auto' : isDark ? 'Dark' : 'Light'}
+              </span>
+            </button>
+
             <LanguageSelector />
 
             <NavLink
@@ -113,10 +164,11 @@ export default function Layout() {
       </div>
 
       {/* ── Mobile Sacred Bottom Navigation Bar ── */}
-      <nav className="bg-[#fffdf9] border-t border-amber-200/80 flex sm:hidden z-30 shadow-lg px-2 py-1 justify-around">
+      <nav className="bg-[#fffdf9] dark:bg-[#0f172a] border-t border-amber-200/80 dark:border-slate-800 flex sm:hidden z-30 shadow-lg px-2 py-1 justify-around">
         {[
           { to: '/', icon: Home, label: isTe ? 'హోమ్' : isHi ? 'होम' : 'Home' },
-          { to: '/map', icon: Map, label: isTe ? 'మ్యాప్' : isHi ? 'नक्शा' : 'Map' },
+          { to: '/map', icon: Map, label: isTe ? 'సౌకర్యాలు' : isHi ? 'सुविधाएं' : 'Facilities' },
+          { to: '/explore', icon: Compass, label: isTe ? 'అన్వేషణ' : isHi ? 'अन्वेषण' : 'Explore' },
           { to: '/scan', icon: QrCode, label: isTe ? 'స్కాన్' : isHi ? 'स्कैन' : 'Scan' },
           { to: '/help', icon: HelpCircle, label: isTe ? 'సహాయం' : isHi ? 'मदद' : 'Help' },
         ].map(({ to, icon: Icon, label }) => (
@@ -127,8 +179,8 @@ export default function Layout() {
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center py-1 text-[11px] font-semibold transition ${
                 isActive
-                  ? 'text-[#991b1b] scale-105'
-                  : 'text-stone-400 hover:text-stone-600'
+                  ? 'text-[#991b1b] dark:text-rose-400 scale-105'
+                  : 'text-stone-400 dark:text-slate-400 hover:text-stone-600 dark:hover:text-slate-200'
               }`
             }
           >

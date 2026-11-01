@@ -37,7 +37,10 @@ export default function LoginPage() {
     try {
       const data = await authenticateLogin(username, password);
       setAuth(data.user, data.token);
-      const redirectPath = location.state?.from || '/map';
+      let redirectPath = location.state?.from;
+      if (!redirectPath || redirectPath === '/map' || redirectPath === '/') {
+        redirectPath = data.user.role === 'admin' ? '/admin/dashboard' : data.user.role === 'inspector' ? '/dashboard' : '/map';
+      }
       navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(

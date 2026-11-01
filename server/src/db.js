@@ -33,6 +33,7 @@ export async function initDB() {
       name_te TEXT,
       name_hi TEXT,
       category TEXT NOT NULL,
+      transport_type TEXT,
       lat REAL NOT NULL,
       lng REAL NOT NULL,
       address TEXT,
@@ -76,11 +77,17 @@ export async function initDB() {
     );
   `);
 
-  // Seed if empty
-  const countRow = db.prepare('SELECT COUNT(*) as c FROM facilities').get();
+  try {
+    db.exec('ALTER TABLE facilities ADD COLUMN transport_type TEXT;');
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Seed or sync facilities
+  const countRow = db.prepare('SELECT COUNT(*) as c FROM facilities WHERE category IN (\'petrol\', \'ev_charging\', \'transport\')').get();
   if (!countRow || countRow.c === 0) {
     seedFacilities(db);
-    console.log('Database seeded with demo facilities.');
+    console.log('Database seeded with complete facility dataset.');
   }
 
   console.log('Database initialized at', DB_PATH);

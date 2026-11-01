@@ -23,6 +23,9 @@ api.interceptors.response.use(
 export const facilitiesAPI = {
   list: (params) => api.get('/facilities', { params }).then((r) => r.data),
   get: (id) => api.get(`/facilities/${id}`).then((r) => r.data),
+  create: (data) => api.post('/facilities', data).then((r) => r.data),
+  update: (id, data) => api.put(`/facilities/${id}`, data).then((r) => r.data),
+  delete: (id) => api.delete(`/facilities/${id}`).then((r) => r.data),
   updateStatus: (id, data) => api.patch(`/facilities/${id}/status`, data).then((r) => r.data),
   verify: (id) => api.post(`/facilities/${id}/verify`).then((r) => r.data),
 };
