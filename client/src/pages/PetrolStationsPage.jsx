@@ -50,8 +50,29 @@ export default function PetrolStationsPage() {
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
 
-  const [stations, setStations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const bundledFuel = useMemo(() => {
+    return (fallbackFacilities || [])
+      .filter((f) => f.category === 'petrol' || f.category === 'ev_charging')
+      .map((f) => ({
+        id: f.id,
+        osm_id: f.id,
+        name: f.name,
+        name_te: f.name_te,
+        name_hi: f.name_hi,
+        category: f.category,
+        lat: f.lat,
+        lng: f.lng,
+        address: f.address,
+        brand: f.name.includes('HP') ? 'HP' : f.name.includes('Indian Oil') ? 'Indian Oil' : f.name.includes('Tata') ? 'Tata Power' : f.name.includes('Jio') ? 'Jio-bp' : 'Bharat Petroleum',
+        opening_hours: f.operating_hours || '24x7 Open',
+        data_source: 'official_gis',
+        is_verified: 1,
+        operational_status: 'operational',
+      }));
+  }, []);
+
+  const [stations, setStations] = useState(bundledFuel);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
   const [brandFilter, setBrandFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,43 +93,23 @@ export default function PetrolStationsPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true);
       try {
         const osmStations = await fetchPetrolStationsOSM();
-        if (alive && osmStations.length > 0) {
-          setStations(osmStations);
-          setLoading(false);
-          return;
+        if (alive && osmStations && osmStations.length > 0) {
+          const existingCoords = bundledFuel.map((b) => [b.lat, b.lng]);
+          const newStations = osmStations.filter((osm) => {
+            return !existingCoords.some(
+              (ec) => haversineDistKm(ec, [osm.lat, osm.lng]) < 0.2
+            );
+          });
+          setStations([...bundledFuel, ...newStations]);
         }
       } catch (e) {
-        console.warn('OSM fuel stations fallback to bundled data:', e);
-      }
-
-      if (alive) {
-        const bundledFuel = fallbackFacilities
-          .filter((f) => f.category === 'petrol' || f.category === 'ev_charging')
-          .map((f) => ({
-            id: f.id,
-            osm_id: f.id,
-            name: f.name,
-            name_te: f.name_te,
-            name_hi: f.name_hi,
-            category: f.category,
-            lat: f.lat,
-            lng: f.lng,
-            address: f.address,
-            brand: f.name.includes('HP') ? 'HP' : f.name.includes('Indian Oil') ? 'Indian Oil' : 'Bharat Petroleum',
-            opening_hours: f.operating_hours || '24x7 Open',
-            data_source: 'official_gis',
-            is_verified: 1,
-            operational_status: 'operational',
-          }));
-        setStations(bundledFuel);
-        setLoading(false);
+        console.warn('OSM fuel stations background refresh note:', e);
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [bundledFuel]);
 
   const filteredStations = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();

@@ -26,6 +26,7 @@ const DestinationDetailPage = lazy(() => import('./pages/DestinationDetailPage.j
 const MoreServicesPage = lazy(() => import('./pages/MoreServicesPage.jsx'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
 const NearbyFoodPage = lazy(() => import('./pages/NearbyFoodPage.jsx'));
+const AccommodationsPage = lazy(() => import('./pages/AccommodationsPage.jsx'));
 const PetrolStationsPage = lazy(() => import('./pages/PetrolStationsPage.jsx'));
 const TransportHubsPage = lazy(() => import('./pages/TransportHubsPage.jsx'));
 
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="services/:type" element={<MoreServicesPage />} />
             <Route path="services" element={<MoreServicesPage />} />
             <Route path="food-nearby" element={<NearbyFoodPage />} />
+            <Route path="accommodations" element={<AccommodationsPage />} />
             <Route path="petrol-stations" element={<PetrolStationsPage />} />
             <Route path="transport-hubs" element={<TransportHubsPage />} />
             <Route path="facility/:token" element={<FacilityPage />} />
@@ -136,7 +138,7 @@ export default function App() {
             <Route
               path="admin/qr"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['admin', 'inspector']}>
                   <QRAdminPage />
                 </ProtectedRoute>
               }

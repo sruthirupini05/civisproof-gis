@@ -221,6 +221,65 @@ function findFacilityOrDestination(rawTarget) {
   return null;
 }
 
+function getModeDurS(distM, travelMode, baseDrivingDurS) {
+  if (travelMode === 'walking' || travelMode === 'walk') {
+    // 4.5 km/h = 1.25 m/s
+    return Math.max(60, Math.round(distM / 1.25));
+  }
+  if (travelMode === 'cycling' || travelMode === 'bike') {
+    // 14.5 km/h = 4.0 m/s
+    return Math.max(60, Math.round(distM / 4.0));
+  }
+  if (travelMode === 'transit') {
+    // 20 km/h (5.55 m/s) + 5 min wait/boarding buffer
+    return Math.max(180, Math.round(distM / 5.55 + 300));
+  }
+  if (travelMode === 'ride') {
+    // 28 km/h (7.78 m/s) + 3 min auto/cab pickup buffer
+    return Math.max(120, Math.round(distM / 7.78 + 180));
+  }
+  // Driving
+  return baseDrivingDurS && baseDrivingDurS > 0
+    ? baseDrivingDurS
+    : Math.max(60, Math.round(distM / 10.5));
+}
+
+function getModeRouteLabels(travelMode, isTe, isHi) {
+  if (travelMode === 'walking' || travelMode === 'walk') {
+    return [
+      isTe ? 'ప్రత్యక్ష నడక మార్గం' : isHi ? 'सीधा पैदल मार्ग' : 'Direct Pedestrian Route',
+      isTe ? 'నదీ తీర ప్రమోనేడ్ ద్వారా' : isHi ? 'नदी तट मार्ग' : 'Via Riverfront Promenade',
+      isTe ? 'నీడ కారిడార్ ద్వారా' : isHi ? 'छायादार तीर्थ मार्ग' : 'Via Shaded Pilgrim Walkway',
+    ];
+  }
+  if (travelMode === 'cycling' || travelMode === 'bike') {
+    return [
+      isTe ? 'సైక్లింగ్ రూట్ (వేగవంతమైనది)' : isHi ? 'साइकिल मार्ग' : 'Fastest Bicycle Route',
+      isTe ? 'రివర్‌సైడ్ లేన్ ద్వారా' : isHi ? 'रिवरसाइड लेन' : 'Via Riverside Lane',
+      isTe ? 'దేవాలయ కారిడార్ ద్వారా' : isHi ? 'मंदिर मार्ग' : 'Via Temple Corridor',
+    ];
+  }
+  if (travelMode === 'transit') {
+    return [
+      isTe ? 'పుష్కర ప్రత్యేక RTC బస్సు' : isHi ? 'पुष्करम स्पेशल आरटीसी बस' : 'Pushkaram Special Bus',
+      isTe ? 'సిటీ ఎక్స్‌ప్రెస్ ఫీడర్' : isHi ? 'सिटी एक्सप्रेस फीडर' : 'City Express Feeder',
+      isTe ? 'ఘాట్ కనెక్ట్ షటిల్' : isHi ? 'घाट कनेक्ट शटल' : 'Ghat Direct Shuttle',
+    ];
+  }
+  if (travelMode === 'ride') {
+    return [
+      isTe ? 'ఆటో రిక్షా (డైరెక్ట్)' : isHi ? 'ऑटो रिक्शा (सीधा)' : 'Auto Rickshaw (Direct)',
+      isTe ? 'క్యాబ్ / ట్యాక్సీ రూట్' : isHi ? 'कैब / टैक्सी' : 'Cab / Taxi Route',
+      isTe ? 'షేర్డ్ ఆటో రూట్' : isHi ? 'साझा ऑटो' : 'Shared Auto Corridor',
+    ];
+  }
+  return [
+    isTe ? 'అత్యంత వేగవంతమైన మార్గం' : isHi ? 'सबसे तेज़ मार्ग' : 'Fastest Route',
+    isTe ? 'NH16 బైపాస్ ద్వారా' : isHi ? 'NH16 बाईपास से' : 'Via NH16 Bypass',
+    isTe ? 'గోదావరి రివర్‌ఫ్రంట్ హైవే' : isHi ? 'रिवरफ्रंट हाईवे' : 'Via Riverfront Highway',
+  ];
+}
+
 export default function NavigatePage() {
   const { facilityId, id } = useParams();
   const [sp] = useSearchParams();
@@ -359,7 +418,7 @@ export default function NavigatePage() {
     return pts;
   }, [JSON.stringify(origin), JSON.stringify(destination)]);
 
-  // 3. Multi-route calculation (Generates primary fastest + alternative routes)
+  // 3. Multi-route calculation (Dynamically computes duration, ETA & callouts per travel mode)
   const calcMultiRoutes = useCallback(async () => {
     if (!origin || !destination) return;
     setRouteLoading(true);
@@ -373,13 +432,14 @@ export default function NavigatePage() {
         const raw = best.geometry.coordinates;
         const mainPts = raw.filter((c) => Array.isArray(c) && c.length >= 2).map((c) => [+c[1], +c[0]]);
         const distM = best.distanceM;
-        const durS = best.durationS;
+        const durS = getModeDurS(distM, mode, best.durationS);
+        const routeNames = getModeRouteLabels(mode, isTe, isHi);
 
-        // Generate 3 Apple-Maps style alternative routes
+        // Generate 3 Apple-Maps style alternative routes dynamically matching mode
         const routeList = [
           {
             id: 'fastest',
-            name: 'Fastest',
+            name: routeNames[0],
             durS,
             distM,
             eta: calcETA(durS),
@@ -387,31 +447,31 @@ export default function NavigatePage() {
             durLabel: fmtDur(durS, isTe, isHi),
             points: mainPts,
             steps: best.steps ?? [],
-            calloutText: `${fmtDur(durS, isTe, isHi)} Fastest`,
+            calloutText: `${fmtDur(durS, isTe, isHi)} ${routeNames[0]}`,
           },
           {
             id: 'alt1',
-            name: 'Via NH16 Bypass',
-            durS: Math.round(durS * 1.08),
-            distM: Math.round(distM * 0.97),
-            eta: calcETA(durS * 1.08),
-            distKm: Math.round((distM * 0.97) / 1000),
-            durLabel: fmtDur(durS * 1.08, isTe, isHi),
+            name: routeNames[1],
+            durS: Math.round(durS * 1.1),
+            distM: Math.round(distM * 0.98),
+            eta: calcETA(durS * 1.1),
+            distKm: Math.round((distM * 0.98) / 1000),
+            durLabel: fmtDur(durS * 1.1, isTe, isHi),
             points: mainPts,
             steps: best.steps ?? [],
-            calloutText: fmtDur(durS * 1.08, isTe, isHi),
+            calloutText: fmtDur(durS * 1.1, isTe, isHi),
           },
           {
             id: 'alt2',
-            name: 'Via Riverfront Highway',
-            durS: Math.round(durS * 1.15),
-            distM: Math.round(distM * 1.01),
-            eta: calcETA(durS * 1.15),
-            distKm: Math.round((distM * 1.01) / 1000),
-            durLabel: fmtDur(durS * 1.15, isTe, isHi),
+            name: routeNames[2],
+            durS: Math.round(durS * 1.22),
+            distM: Math.round(distM * 1.05),
+            eta: calcETA(durS * 1.22),
+            distKm: Math.round((distM * 1.05) / 1000),
+            durLabel: fmtDur(durS * 1.22, isTe, isHi),
             points: mainPts,
             steps: best.steps ?? [],
-            calloutText: fmtDur(durS * 1.15, isTe, isHi),
+            calloutText: fmtDur(durS * 1.22, isTe, isHi),
           },
         ];
 
@@ -421,13 +481,14 @@ export default function NavigatePage() {
         throw new Error('No coordinates in route');
       }
     } catch {
-      // Fallback straight-line route
+      // Fallback route
       const distM = haversineM(origin, destination);
-      const durS = Math.round(distM / 12);
+      const durS = getModeDurS(distM, mode, Math.round(distM / 10.5));
+      const routeNames = getModeRouteLabels(mode, isTe, isHi);
       setRoutes([
         {
           id: 'fastest',
-          name: 'Fastest Route',
+          name: routeNames[0],
           durS,
           distM,
           eta: calcETA(durS),
@@ -435,7 +496,7 @@ export default function NavigatePage() {
           durLabel: fmtDur(durS, isTe, isHi),
           points: [origin, destination],
           steps: [],
-          calloutText: `${fmtDur(durS, isTe, isHi)} Fastest`,
+          calloutText: `${fmtDur(durS, isTe, isHi)} ${routeNames[0]}`,
         },
       ]);
       setSelectedRouteIdx(0);

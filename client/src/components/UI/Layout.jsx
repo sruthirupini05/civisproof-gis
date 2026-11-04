@@ -9,7 +9,7 @@ export default function Layout() {
   const { t, i18n } = useTranslation();
   const { user, clearAuth } = useAuthStore();
   const { currentLang } = useLanguageStore();
-  const { mode, isDark, toggleTheme } = useThemeStore();
+  const { mode, isDark, setMode } = useThemeStore();
   const navigate = useNavigate();
 
   const isTe = (currentLang || i18n.language || 'te').startsWith('te');
@@ -76,24 +76,31 @@ export default function Layout() {
 
           {/* Right Header Utilities */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition active:scale-95"
-              title={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-              aria-label="Toggle theme mode"
-            >
-              {isDark ? (
-                <>
-                  <Sun size={14} className="text-amber-300" />
-                  <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon size={14} className="text-amber-200" />
-                  <span className="hidden md:inline uppercase text-[10px] font-bold tracking-wider">Dark</span>
-                </>
-              )}
-            </button>
+            {/* Segmented Light / Dark Toggle (Clean, explicit selection) */}
+            <div className="flex items-center bg-black/20 backdrop-blur-xs p-0.5 rounded-xl border border-white/15">
+              <button
+                onClick={() => setMode('light')}
+                className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg transition ${
+                  !isDark ? 'bg-white text-stone-900 shadow-xs' : 'text-amber-100/80 hover:text-white'
+                }`}
+                title="Light Mode"
+                aria-label="Light Mode"
+              >
+                <Sun size={13} className={!isDark ? 'text-amber-600' : ''} />
+                <span className="hidden md:inline">Light</span>
+              </button>
+              <button
+                onClick={() => setMode('dark')}
+                className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg transition ${
+                  isDark ? 'bg-amber-400 text-stone-950 shadow-xs' : 'text-amber-100/80 hover:text-white'
+                }`}
+                title="Dark Mode"
+                aria-label="Dark Mode"
+              >
+                <Moon size={13} className={isDark ? 'text-stone-900' : ''} />
+                <span className="hidden md:inline">Dark</span>
+              </button>
+            </div>
 
             <LanguageSelector />
 

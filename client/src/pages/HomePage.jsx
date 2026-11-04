@@ -263,6 +263,7 @@ export default function HomePage() {
                   if (cat.id === 'food') navigate('/food-nearby');
                   else if (cat.id === 'petrol') navigate('/petrol-stations');
                   else if (cat.id === 'transport') navigate('/transport-hubs');
+                  else if (cat.id === 'shelter') navigate('/accommodations');
                   else navigate(`/map?category=${cat.id}`);
                 }}
                 className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 hover:border-[#991b1b] dark:hover:border-rose-500 shadow-xs hover:shadow-md transition text-center group active:scale-98"
@@ -281,7 +282,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* View on Map Pill Button (Matching Reference Screen 10) */}
+          {/* View on Map Pill Button (Matching Reference Screen 6) */}
           <div className="mt-5 flex justify-center">
             <Link
               to="/map"
@@ -328,17 +329,6 @@ export default function HomePage() {
                 </div>
               </a>
             ))}
-          </div>
-
-          {/* View on Map Pill Button (Matching Reference Screen 10) */}
-          <div className="mt-5 flex justify-center">
-            <Link
-              to="/map"
-              className="inline-flex items-center gap-2 py-3 px-8 bg-[#991b1b] hover:bg-[#881337] text-white font-extrabold text-sm rounded-full shadow-lg shadow-red-950/20 active:scale-98 transition"
-            >
-              <span>{isTe ? 'మ్యాప్‌లో వీక్షించండి' : isHi ? 'नक्शे पर देखें' : 'View on Map'}</span>
-              <ArrowRight size={16} />
-            </Link>
           </div>
         </div>
 

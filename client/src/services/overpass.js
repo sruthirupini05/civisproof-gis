@@ -12,12 +12,31 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.kumi.systems/api/interpreter',
 ];
 
-async function runOverpassQuery(query) {
+// In-memory cache to prevent repeated network delays
+const memCache = new Map();
+
+async function runOverpassQuery(query, cacheKey) {
+  if (cacheKey && memCache.has(cacheKey)) {
+    return memCache.get(cacheKey);
+  }
+  if (typeof window !== 'undefined' && cacheKey) {
+    try {
+      const stored = sessionStorage.getItem(`overpass_${cacheKey}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memCache.set(cacheKey, parsed);
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+
   let lastErr = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
+      const timer = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout
 
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -30,13 +49,18 @@ async function runOverpassQuery(query) {
       if (!resp.ok) continue;
       const data = await resp.json();
       if (Array.isArray(data?.elements)) {
+        if (cacheKey) {
+          memCache.set(cacheKey, data.elements);
+          try {
+            sessionStorage.setItem(`overpass_${cacheKey}`, JSON.stringify(data.elements));
+          } catch {}
+        }
         return data.elements;
       }
     } catch (e) {
       lastErr = e;
     }
   }
-  console.warn('Overpass queries failed, returning empty set:', lastErr);
   return [];
 }
 
@@ -44,14 +68,14 @@ async function runOverpassQuery(query) {
  * Fetch real restaurants, cafes, and eateries around Rajahmundry
  */
 export async function fetchNearbyFoodOSM() {
-  const q = `[out:json][timeout:25];
+  const q = `[out:json][timeout:10];
 (
   node["amenity"="restaurant"](${RAJAHMUNDRY_BBOX});
   node["amenity"="fast_food"](${RAJAHMUNDRY_BBOX});
   node["amenity"="cafe"](${RAJAHMUNDRY_BBOX});
 );
 out body;`;
-  const elements = await runOverpassQuery(q);
+  const elements = await runOverpassQuery(q, 'nearby_food');
 
   return elements
     .filter((el) => el.tags?.name && el.lat && el.lon)
@@ -89,12 +113,12 @@ out body;`;
  * Fetch real fuel / petrol stations around Rajahmundry
  */
 export async function fetchPetrolStationsOSM() {
-  const q = `[out:json][timeout:25];
+  const q = `[out:json][timeout:10];
 (
   node["amenity"="fuel"](${RAJAHMUNDRY_BBOX});
 );
 out body;`;
-  const elements = await runOverpassQuery(q);
+  const elements = await runOverpassQuery(q, 'petrol_stations');
 
   return elements
     .filter((el) => el.lat && el.lon)
@@ -125,14 +149,14 @@ out body;`;
  * Fetch real railway stations and bus stations/stops around Rajahmundry
  */
 export async function fetchTransportHubsOSM() {
-  const q = `[out:json][timeout:25];
+  const q = `[out:json][timeout:10];
 (
   node["railway"="station"](${RAJAHMUNDRY_BBOX});
   node["amenity"="bus_station"](${RAJAHMUNDRY_BBOX});
   node["aeroway"="aerodrome"](${RAJAHMUNDRY_BBOX});
 );
 out body;`;
-  const elements = await runOverpassQuery(q);
+  const elements = await runOverpassQuery(q, 'transport_hubs');
 
   return elements
     .filter((el) => el.lat && el.lon)

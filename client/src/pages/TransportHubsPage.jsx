@@ -50,8 +50,28 @@ export default function TransportHubsPage() {
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
 
-  const [hubs, setHubs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const bundledTransport = useMemo(() => {
+    return (fallbackFacilities || [])
+      .filter((f) => f.category === 'transport')
+      .map((f) => ({
+        id: f.id,
+        osm_id: f.id,
+        name: f.name,
+        name_te: f.name_te,
+        name_hi: f.name_hi,
+        category: 'transport',
+        transport_type: f.transport_type || (f.name.includes('Railway') ? 'train' : f.name.includes('Airport') ? 'flight' : 'bus'),
+        lat: f.lat,
+        lng: f.lng,
+        address: f.address,
+        data_source: 'official_gis',
+        is_verified: 1,
+        operational_status: 'operational',
+      }));
+  }, []);
+
+  const [hubs, setHubs] = useState(bundledTransport);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list');
   const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'train' | 'bus' | 'flight'
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,42 +92,24 @@ export default function TransportHubsPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true);
       try {
         const osmHubs = await fetchTransportHubsOSM();
-        if (alive && osmHubs.length > 0) {
-          setHubs(osmHubs);
-          setLoading(false);
-          return;
+        if (alive && osmHubs && osmHubs.length > 0) {
+          // Merge OSM hubs with bundled, avoiding duplicates by distance < 200m
+          const existingCoords = bundledTransport.map((b) => [b.lat, b.lng]);
+          const newHubs = osmHubs.filter((osm) => {
+            return !existingCoords.some(
+              (ec) => haversineDistKm(ec, [osm.lat, osm.lng]) < 0.2
+            );
+          });
+          setHubs([...bundledTransport, ...newHubs]);
         }
       } catch (e) {
-        console.warn('OSM transport hubs fallback to bundled:', e);
-      }
-
-      if (alive) {
-        const bundledTransport = fallbackFacilities
-          .filter((f) => f.category === 'transport')
-          .map((f) => ({
-            id: f.id,
-            osm_id: f.id,
-            name: f.name,
-            name_te: f.name_te,
-            name_hi: f.name_hi,
-            category: 'transport',
-            transport_type: f.transport_type || (f.name.includes('Railway') ? 'train' : f.name.includes('Airport') ? 'flight' : 'bus'),
-            lat: f.lat,
-            lng: f.lng,
-            address: f.address,
-            data_source: 'official_gis',
-            is_verified: 1,
-            operational_status: 'operational',
-          }));
-        setHubs(bundledTransport);
-        setLoading(false);
+        console.warn('OSM transport hubs background refresh note:', e);
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [bundledTransport]);
 
   const filteredHubs = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();

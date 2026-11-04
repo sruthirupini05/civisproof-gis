@@ -15,10 +15,23 @@ import {
 } from 'lucide-react';
 import { facilitiesAPI, inspectionsAPI } from '../services/api.js';
 import { getCachedFacilities } from '../services/db.js';
+import fallbackFacilities from '../data/fallbackFacilities.json';
 import StatusBadge from '../components/UI/StatusBadge.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { useAuthStore, useLanguageStore } from '../store/useStore.js';
 import { format } from 'date-fns';
+
+function safeFormatDate(val, fmt = 'dd MMM yyyy') {
+  if (!val) return null;
+  try {
+    const clean = typeof val === 'string' ? val.replace(' ', 'T') : val;
+    const d = new Date(clean);
+    if (isNaN(d.getTime())) return null;
+    return format(d, fmt);
+  } catch {
+    return null;
+  }
+}
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -34,10 +47,11 @@ export default function DashboardPage() {
   const [verifyingId, setVerifyingId] = useState(null);
 
   function getFacilityDisplayName(f) {
+    if (!f) return '';
     const lang = (currentLang || i18n.language || 'te').slice(0, 2);
     if (lang === 'te' && f.name_te) return f.name_te;
     if (lang === 'hi' && f.name_hi) return f.name_hi;
-    return f.name;
+    return f.name || 'Facility';
   }
 
   useEffect(() => {
@@ -50,24 +64,48 @@ export default function DashboardPage() {
       let all = [];
       let queue = [];
       if (navigator.onLine) {
-        all = await facilitiesAPI.list({});
+        try {
+          const res = await facilitiesAPI.list({});
+          if (Array.isArray(res)) all = res;
+          else if (Array.isArray(res?.facilities)) all = res.facilities;
+          else if (Array.isArray(res?.data)) all = res.data;
+        } catch {}
+
         if (user && ['admin', 'inspector'].includes(user.role)) {
           try {
-            queue = await inspectionsAPI.attentionQueue();
+            const q = await inspectionsAPI.attentionQueue();
+            if (Array.isArray(q)) queue = q;
+            else if (Array.isArray(q?.data)) queue = q.data;
           } catch {}
         }
-      } else {
-        all = await getCachedFacilities();
+      }
+
+      if (!all.length) {
+        try {
+          const cached = await getCachedFacilities();
+          if (Array.isArray(cached) && cached.length) all = cached;
+        } catch {}
+      }
+
+      if (!all.length) {
+        all = Array.isArray(fallbackFacilities) ? fallbackFacilities : [];
       }
 
       setFacilities(all);
 
-      // If queue API wasn't loaded or offline, compute attention queue client-side
-      if (!queue.length) {
+      // Compute attention queue client-side if API not available
+      if (!queue.length && all.length) {
         queue = all.filter((f) => {
-          const isStale =
-            !f.last_inspected ||
-            new Date(f.last_inspected) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          if (!f || typeof f !== 'object') return false;
+          let isStale = true;
+          if (f.last_inspected) {
+            try {
+              const d = new Date(String(f.last_inspected).replace(' ', 'T'));
+              if (!isNaN(d.getTime())) {
+                isStale = d < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+              }
+            } catch {}
+          }
           const isUnverified = !f.is_verified || f.status === 'reported';
           const isUnavailable = f.operational_status === 'unavailable' || f.operational_status === 'unknown';
           return isStale || isUnverified || isUnavailable;
@@ -76,6 +114,7 @@ export default function DashboardPage() {
       setAttentionQueue(queue);
     } catch (e) {
       console.error('Failed to load dashboard data:', e);
+      setFacilities(fallbackFacilities || []);
     } finally {
       setLoading(false);
     }
@@ -97,20 +136,32 @@ export default function DashboardPage() {
     }
   }
 
-  // Summary Metrics
-  const totalCount = facilities.length;
-  const verifiedCount = facilities.filter((f) => f.is_verified).length;
-  const unavailableCount = facilities.filter((f) => f.operational_status === 'unavailable').length;
-  const staleCount = facilities.filter((f) => {
-    return (
-      !f.last_inspected ||
-      new Date(f.last_inspected) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    );
+  // Summary Metrics (guaranteed resilient)
+  const safeFacList = Array.isArray(facilities) ? facilities : [];
+  const safeAttnList = Array.isArray(attentionQueue) ? attentionQueue : [];
+
+  const totalCount = safeFacList.length;
+  const verifiedCount = safeFacList.filter((f) => f && f.is_verified).length;
+  const unavailableCount = safeFacList.filter((f) => f && f.operational_status === 'unavailable').length;
+  const staleCount = safeFacList.filter((f) => {
+    if (!f || !f.last_inspected) return true;
+    try {
+      const d = new Date(String(f.last_inspected).replace(' ', 'T'));
+      return isNaN(d.getTime()) || d < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    } catch {
+      return true;
+    }
   }).length;
 
-  const filteredList = (activeTab === 'attention' ? attentionQueue : facilities).filter((f) => {
-    const q = searchFilter.toLowerCase();
-    return !q || f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q);
+  const currentList = activeTab === 'attention' ? safeAttnList : safeFacList;
+  const filteredList = currentList.filter((f) => {
+    if (!f || typeof f !== 'object') return false;
+    const q = (searchFilter || '').toLowerCase().trim();
+    if (!q) return true;
+    const nameStr = (f.name || '').toLowerCase();
+    const catStr = (f.category || '').toLowerCase();
+    const dispName = (getFacilityDisplayName(f) || '').toLowerCase();
+    return nameStr.includes(q) || catStr.includes(q) || dispName.includes(q);
   });
 
   if (loading) {
@@ -251,9 +302,9 @@ export default function DashboardPage() {
                         {f.open_defects} Open Defects
                       </span>
                     )}
-                    {f.last_inspected ? (
+                    {safeFormatDate(f.last_inspected) ? (
                       <span className="text-[10px] text-slate-500">
-                        Inspected: {format(new Date(f.last_inspected), 'dd MMM yyyy')}
+                        Inspected: {safeFormatDate(f.last_inspected)}
                       </span>
                     ) : (
                       <span className="text-[10px] font-semibold text-amber-700">
