@@ -1,207 +1,228 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
+  Bell,
+  ArrowLeft,
   PhoneCall,
   ShieldAlert,
   HeartPulse,
   Info,
   Search,
   Accessibility,
-  Bell,
   CheckCircle2,
-  ArrowRight,
+  Calendar,
+  Waves,
+  Bus,
+  Sparkles,
 } from 'lucide-react';
 import { useLanguageStore } from '../store/useStore.js';
 
 export default function HelpPage() {
+  const navigate = useNavigate();
   const { currentLang } = useLanguageStore();
+
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
 
+  const alerts = [
+    {
+      id: 'alt-01',
+      tag: 'LIVE WATER STATUS',
+      badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300',
+      time: 'Updated Today 07:00 AM',
+      title: 'Godavari Water Flow Normal & Safe',
+      title_te: 'గోదావరి నది ప్రవాహం సాధారణ & సురక్షిత స్థితిలో ఉంది',
+      title_hi: 'गोदावरी जल प्रवाह सामान्य एवं सुरक्षित',
+      desc: 'Water level at Dowleswaram barrage is normal. Bathing permitted across all 5 main ghats with safety barricades intact.',
+      desc_te: 'ధవళేశ్వరం బ్యారేజీ వద్ద నీటి మట్టం సాధారణంగా ఉంది. రక్షణ బారికేడ్ల పరిధిలో అన్ని ప్రధాన ఘాట్లలో పవిత్ర స్నానాలు అనుమతించబడ్డాయి.',
+      desc_hi: 'धवलेश्वरम बैराज पर जलस्तर सामान्य है। सुरक्षा बैरिकेड्स के भीतर सभी मुख्य घाटों पर स्नान की अनुमति है।',
+    },
+    {
+      id: 'alt-02',
+      tag: 'TRANSIT UPDATE',
+      badgeClass: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/80 dark:text-blue-300',
+      time: 'Operating Continuous',
+      title: 'Free Circular City Ghat Buses Active',
+      title_te: 'ఉచిత సర్క్యులర్ సిటీ ఘాట్ బస్సులు నడుస్తున్నాయి',
+      title_hi: 'निःशुल्क सर्कुलर सिटी घाट बसें सक्रिय',
+      desc: 'APSRTC operating free non-stop feeder buses between satellite parking grounds and Kotipalli Ghat.',
+      desc_te: 'శాటిలైట్ పార్కింగ్ మైదానాలు మరియు కోటిపల్లి ఘాట్ మధ్య ఏపీఎస్ఆర్టీసీ ఉచిత నిరంతర ఫీడర్ బస్సులను నడుపుతోంది.',
+      desc_hi: 'एपीएसआरटीसी सैटेलाइट पार्किंग मैदानों और कोटिपल्ली घाट के बीच निरंतर मुफ्त बसें संचालित कर रहा है।',
+    },
+    {
+      id: 'alt-03',
+      tag: 'RITUAL ADVISORY',
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300',
+      time: '04:30 AM - 07:00 AM',
+      title: 'Morning Brahma Muhurtam Bathing Hours',
+      title_te: 'ఉదయపు బ్రాహ్మీ ముహూర్తం పవిత్ర స్నాన సమయాలు',
+      title_hi: 'प्रातः ब्राह्म मुहूर्त स्नान समय',
+      desc: 'Special sacred lamp floating (Deepa Daanam) permitted at Saraswathi Ghat and Panchavati Ghat.',
+      desc_te: 'సరస్వతి ఘాట్ మరియు పంచవటి ఘాట్ వద్ద పవిత్ర దీపారాధన (దీప దానం) ప్రత్యేకంగా అనుమతించబడింది.',
+      desc_hi: 'सरस्वती घाट एवं पंचवटी घाट पर पवित्र दीप दान अनुष्ठान की विशेष अनुमति दी गई है।',
+    },
+    {
+      id: 'alt-04',
+      tag: 'SAFETY & RESCUE',
+      badgeClass: 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300',
+      time: '24×7 Active Patrol',
+      title: 'NDRF Water Rescue & Life Jackets Ready',
+      title_te: 'ఎన్.డి.ఆర్.ఎఫ్ నీటి రెస్క్యూ & లైఫ్ జాకెట్లు సిద్ధం',
+      title_hi: 'एनडीआरएफ जल बचाव एवं लाइफ जैकेट तैनात',
+      desc: 'Professional swimmers and rescue speedboats continuously patrolling riverfront. Pilgrims requested to bathe strictly within marked barricades.',
+      desc_te: 'నదీ తీరంలో నిరంతర గస్తీలో స్పీడ్ బోట్లు మరియు రెస్క్యూ స్విమ్మర్లు. బారికేడ్ల పరిధిలోనే స్నానం చేయవలసిందిగా మనవి.',
+      desc_hi: 'नदी तट पर लाइफगार्ड एवं स्पीड बोट्स निरंतर गश्त पर हैं। कृपया बैरिकेड्स के भीतर ही स्नान करें।',
+    },
+  ];
+
   return (
-    <div className="min-h-full pb-20 bg-[#fffdf9]">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white p-6 shadow-md text-center">
-        <h1 className="text-xl sm:text-2xl font-black mb-1">
-          {isTe ? 'అత్యవసర సహాయం & సేవలు' : isHi ? 'आपातकालीन सहायता और सेवाएं' : 'Emergency Help & Services'}
-        </h1>
-        <p className="text-xs sm:text-sm text-amber-200/90">
-          {isTe
-            ? 'గోదావరి పుష్కరాలు 2027 — 24×7 యాత్రికుల రక్షణ'
-            : isHi
-            ? 'गोदावरी पुष्करालु 2027 — 24×7 तीर्थयात्री सहायता'
-            : 'Godavari Pushkaralu 2027 — 24×7 Pilgrim Support'}
-        </p>
+    <div className="min-h-screen bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-stone-100 pb-24 transition-colors">
+      {/* ── Top Header ── */}
+      <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white pt-4 pb-5 px-4 shadow-md sticky top-0 z-30">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-xs transition"
+          >
+            <ArrowLeft size={16} />
+            <span>{isTe ? 'హోమ్' : isHi ? 'होम' : 'Back'}</span>
+          </button>
+
+          <h1 className="text-sm sm:text-base font-extrabold tracking-tight">
+            {isTe ? 'అధికారిక బులెటిన్లు & సలహాలు' : isHi ? 'आधिकारिक बुलेटिन एवं सलाह' : 'Official Bulletins & Advisories'}
+          </h1>
+
+          <div className="w-16 flex justify-end">
+            <Link
+              to="/events"
+              className="text-[11px] font-bold bg-amber-400 text-stone-900 px-2.5 py-1 rounded-full shadow-xs hover:bg-amber-300 transition"
+            >
+              Events →
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* ── Emergency Help (Screen 8) ── */}
-        <section className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-full bg-red-100 text-[#991b1b] flex items-center justify-center font-bold text-lg">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+        {/* ── Official Pushkaram Bulletins & Alerts Header Card (Matching User Image 1) ── */}
+        <div className="bg-[#eefcf4] dark:bg-emerald-950/30 p-5 rounded-3xl border border-emerald-300/80 dark:border-emerald-800/60 shadow-xs">
+          <h2 className="font-black text-base sm:text-lg text-emerald-950 dark:text-emerald-300 flex items-center gap-2">
+            <Bell size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>
+              {isTe
+                ? 'అధికారిక పుష్కర హెచ్చరికలు & బులెటిన్లు'
+                : isHi
+                ? 'आधिकारिक पुष्करम बुलेटिन एवं अलर्ट'
+                : 'Official Pushkaram Bulletins & Alerts'}
+            </span>
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-300 mt-1.5 font-medium">
+            {isTe
+              ? 'లైవ్ నదీ ప్రవాహం, పవిత్ర స్నాన ముహూర్తాలు మరియు ట్రాఫిక్ సమాచారం.'
+              : isHi
+              ? 'लाइव नदी जलस्तर, पवित्र स्नान मुहूर्त और यातायात सलाह।'
+              : 'Live river water levels, auspicious bath muhurtams, and traffic movement advisory.'}
+          </p>
+        </div>
+
+        {/* ── Alert Cards List (Matching Exact User Reference Image 1) ── */}
+        <div className="space-y-3">
+          {alerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200/90 dark:border-stone-800 shadow-xs hover:shadow-md transition space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${alert.badgeClass}`}
+                >
+                  {alert.tag}
+                </span>
+                <span className="text-[11px] text-stone-400 dark:text-stone-500 font-mono font-medium">
+                  {alert.time}
+                </span>
+              </div>
+
+              <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-white pt-0.5 leading-snug">
+                {isTe ? alert.title_te : isHi ? alert.title_hi : alert.title}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-300 leading-relaxed">
+                {isTe ? alert.desc_te : isHi ? alert.desc_hi : alert.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Emergency Pushkaram Assistance Row ── */}
+        <div className="bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 rounded-3xl p-5 border border-red-200/80 dark:border-red-900/40 shadow-xs">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-sm">
               🆘
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#881337]">
-                {isTe ? 'అత్యవసర హెల్ప్‌లైన్లు' : isHi ? 'आपातकालीन हेल्पलाइन' : 'Emergency Help'}
-              </h2>
-              <p className="text-xs text-stone-500">
-                {isTe ? 'నేరుగా కాల్ చేయడానికి నంబర్‌పై నొక్కండి' : isHi ? 'कॉल करने के लिए नंबर पर टैप करें' : 'Tap to call directly'}
-              </p>
+              <div className="font-extrabold text-sm text-red-950 dark:text-rose-300">
+                {isTe ? 'అత్యవసర పుష్కర సహాయం' : isHi ? 'आपातकालीन सहायता' : 'Emergency Pushkaram Assistance'}
+              </div>
+              <div className="text-[11px] text-red-800/80 dark:text-rose-400">
+                {isTe ? 'యాత్రికుల రక్షణ కోసం 24×7 అందుబాటులో ఉంది' : 'Available 24×7 for pilgrim safety'}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[
-              {
-                label: isTe ? 'అత్యవసర ప్రతిస్పందన' : isHi ? 'आपातकालीन प्रतिक्रिया' : 'Emergency Response',
-                sub: isTe ? 'ఉచిత టోల్‌ఫ్రీ 24×7' : isHi ? 'टोल फ्री 24×7' : 'Toll-free 24×7',
-                num: '108',
-                icon: PhoneCall,
-                bg: 'bg-red-50 text-red-900 border-red-200',
-              },
-              {
-                label: isTe ? 'పోలీస్ పుష్కర విభాగం' : isHi ? 'पुष्करम पुलिस सहायता' : 'Police Pushkaram Cell',
-                sub: isTe ? 'రాజమండ్రి పోలీస్ కంట్రోల్' : isHi ? 'राजमुंदरी पुलिस कंट्रोल' : 'Rajahmundry Police',
-                num: '100',
-                icon: ShieldAlert,
-                bg: 'bg-blue-50 text-blue-900 border-blue-200',
-              },
-              {
-                label: isTe ? 'అంబులెన్స్ & ట్రామా' : isHi ? 'एम्बुलेंस व ट्रॉमा यूनिट' : 'Ambulance & Trauma',
-                sub: isTe ? 'ఘాట్ జోన్ మొబైల్ విభాగాలు' : isHi ? 'घाट क्षेत्र मोबाइल यूनिट' : 'Ghat Zone Mobile Units',
-                num: '108',
-                icon: HeartPulse,
-                bg: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-              },
-              {
-                label: isTe ? 'యాత్రికుల సమాచార కేంద్రం' : isHi ? 'तीर्थयात्री सूचना डेस्क' : 'Pilgrim Help Desk',
-                sub: isTe ? 'పురపాలక సహాయ కేంద్రం' : isHi ? 'नगर निगम हेल्प डेस्क' : 'Municipal Help Desk',
-                num: '0883-2475555',
-                icon: Info,
-                bg: 'bg-amber-50 text-amber-900 border-amber-200',
-              },
-            ].map((item, idx) => (
+              { label: isTe ? 'అత్యవసరం' : 'Emergency', num: '108', icon: PhoneCall, color: 'text-red-700 bg-white dark:bg-stone-800 border-red-200 dark:border-stone-700' },
+              { label: isTe ? 'పోలీస్' : 'Police Help', num: '100', icon: ShieldAlert, color: 'text-blue-700 bg-white dark:bg-stone-800 border-blue-200 dark:border-stone-700' },
+              { label: isTe ? 'అంబులెన్స్' : 'Ambulance', num: '108', icon: HeartPulse, color: 'text-emerald-700 bg-white dark:bg-stone-800 border-emerald-200 dark:border-stone-700' },
+              { label: isTe ? 'హెల్ప్‌లైన్' : 'Helpline', num: '1800-425-4567', icon: PhoneCall, color: 'text-amber-800 bg-white dark:bg-stone-800 border-amber-200 dark:border-stone-700' },
+            ].map((em, i) => (
               <a
-                key={idx}
-                href={`tel:${item.num}`}
-                className={`flex items-center justify-between p-3.5 rounded-2xl border ${item.bg} hover:shadow-xs transition`}
+                key={i}
+                href={`tel:${em.num}`}
+                className={`flex items-center gap-2 p-2.5 rounded-xl border ${em.color} shadow-2xs hover:shadow-xs transition`}
               >
-                <div className="flex items-center gap-3">
-                  <item.icon size={20} />
-                  <div>
-                    <div className="font-extrabold text-sm leading-tight">{item.label}</div>
-                    <div className="text-[11px] opacity-75">{item.sub}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="font-black text-sm bg-white/80 px-2.5 py-1 rounded-lg border border-black/5 shadow-2xs">
-                    {item.num}
-                  </span>
+                <em.icon size={16} />
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase font-bold text-stone-400">{em.label}</div>
+                  <div className="text-xs font-black tracking-tight truncate">{em.num}</div>
                 </div>
               </a>
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* ── More Services (Screen 9) ── */}
-        <section className="bg-white rounded-3xl p-5 border border-amber-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-lg">
-              ℹ️
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-stone-800">
-                {isTe ? 'ఇతర సేవలు & మార్గదర్శకాలు' : isHi ? 'अन्य सेवाएं एवं मार्गदर्शन' : 'More Services'}
-              </h2>
-              <p className="text-xs text-stone-500">
-                {isTe ? 'పుష్కర సమాచారం మరియు సౌకర్యాలు' : isHi ? 'पुष्करम सूचना और सुविधाएं' : 'Event guidance and accessibility'}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            {[
-              {
-                title: isTe ? 'సమాచార కేంద్రాలు' : isHi ? 'सूचना केंद्र' : 'Information Centres',
-                desc: isTe ? 'రైల్వే స్టేషన్, బస్ స్టాండ్ మరియు ప్రధాన ఘాట్ల వద్ద' : isHi ? 'रेलवे स्टेशन, बस स्टैंड एवं मुख्य घाटों पर' : 'At railway station, bus stands & main ghats',
-                icon: Info,
-                link: '/services/info',
-              },
-              {
-                title: isTe ? 'తప్పిపోయిన వారి / వస్తువుల సహాయ కేంద్రం' : isHi ? 'खोया-पाया केंद्र' : 'Lost & Found Counters',
-                desc: isTe ? 'వస్తువులు లేదా కుటుంబ సభ్యులను గుర్తించడానికి' : isHi ? 'खोई वस्तुओं या परिजनों की सूचना के लिए' : 'Report or find lost items and relatives',
-                icon: Search,
-                link: '/services/lost-found',
-              },
-              {
-                title: isTe ? 'ప్రత్యేక సహాయ & వీల్‌చైర్ సేవలు' : isHi ? 'दिव्यांग व वृद्ध सहायता सेवा' : 'Accessibility Services',
-                desc: isTe ? 'వృద్ధులు మరియు దివ్యాంగులకు ఉచిత బ్యాటరీ కార్లు' : isHi ? 'बुजुर्गों और दिव्यांगों के लिए बैटरी कार व व्हीलचेयर' : 'Wheelchairs & battery assistance for elderly',
-                icon: Accessibility,
-                link: '/services/accessibility',
-              },
-              {
-                title: isTe ? 'అధికారిక పుష్కర నవీకరణలు' : isHi ? 'आधिकारिक पुष्करम अपडेट' : 'Official Event Updates',
-                desc: isTe ? 'ఘాట్ల రద్దీ సమాచారం మరియు హెచ్చరికలు' : isHi ? 'घाटों पर भीड़ एवं संचालन की ताजा स्थिति' : 'Crowd density and ghat operational updates',
-                icon: Bell,
-                link: '/services/events',
-              },
-            ].map((srv, idx) => (
-              <Link
-                key={idx}
-                to={srv.link}
-                className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-100 bg-[#fffdfa] hover:bg-white hover:border-amber-200 transition shadow-2xs group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center group-hover:scale-105 transition">
-                    <srv.icon size={18} />
-                  </div>
-                  <div>
-                    <div className="font-extrabold text-sm text-stone-900 group-hover:text-[#991b1b] transition">
-                      {srv.title}
-                    </div>
-                    <div className="text-xs text-stone-500">{srv.desc}</div>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-stone-400 group-hover:text-[#991b1b] transition" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Offline Architecture Card (Screen 7) ── */}
-        <section className="bg-gradient-to-br from-amber-50/70 to-orange-50/70 rounded-3xl p-5 border border-amber-200/80 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-white text-[#991b1b] flex items-center justify-center font-bold text-xl shadow-xs border border-amber-200">
+        {/* ── Offline Architecture Card ── */}
+        <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-amber-200/80 dark:border-stone-800 shadow-xs space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-xl border border-amber-200/60 dark:border-amber-900/60">
               📶
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#881337]">
-                {isTe ? 'మీరు ఆఫ్‌లైన్‌లో ఉపయోగించడానికి సిద్ధంగా ఉన్నారు' : isHi ? 'आप ऑफ़लाइन उपयोग के लिए तैयार हैं' : "You're Ready for Offline Use"}
-              </h2>
-              <p className="text-xs text-stone-600">
+              <div className="font-extrabold text-sm text-stone-900 dark:text-white">
+                {isTe ? 'పూర్తిగా ఆఫ్‌లైన్‌లో అందుబాటులో ఉంది' : 'Available Completely Offline'}
+              </div>
+              <div className="text-xs text-stone-500 dark:text-stone-400">
                 {isTe
-                  ? 'మొబైల్ సిగ్నల్ లేకపోయినా మ్యాప్‌లు, సౌకర్యాలు మరియు నావిగేషన్ పని చేస్తాయి'
-                  : isHi
-                  ? 'मोबाइल नेटवर्क न होने पर भी नक्शा, सुविधाएं और नेविगेशन उपलब्ध हैं'
-                  : 'Explore maps, facilities and navigation even without mobile network'}
-              </p>
+                  ? 'ఇంటర్నెట్ లేకుండానే సౌకర్యాల స్థానాలు మరియు మ్యాప్ నావిగేషన్ పని చేస్తాయి'
+                  : 'Facility locations and map navigation work seamlessly without mobile network.'}
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2 mt-4 bg-white/80 p-3.5 rounded-2xl border border-amber-200/50">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
             {[
-              isTe ? 'సౌకర్యాల స్థానాలు మరియు సమాచారం మీ పరికరంలో భద్రపరచబడ్డాయి' : isHi ? 'सुविधाओं के स्थान और विवरण डिवाइस में सुरक्षित हैं' : 'Facility locations and verification details cached on device',
-              isTe ? 'డౌన్‌లోడ్ చేసిన మ్యాప్ ప్రాంతం మరియు GPS ట్రాకింగ్' : isHi ? 'ऑफ़लाइन नक्शा और जीपीएस नेविगेशन' : 'Downloaded map area and GPS tracking',
-              isTe ? 'అత్యవసర ఫోన్ నంబర్లు ఎల్లప్పుడూ అందుబాటులో ఉంటాయి' : isHi ? 'आपातकालीन संपर्क नंबर हमेशा उपलब्ध हैं' : 'Emergency contact numbers accessible anytime',
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 text-xs text-stone-700">
-                <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                <span>{item}</span>
+              isTe ? 'సౌకర్యాల వివరాలు సేవ్ అయ్యాయి' : 'IndexedDB offline storage cache',
+              isTe ? 'మ్యాప్ టైల్స్ క్యాష్ అయ్యాయి' : 'Pre-cached GIS geometry coordinates',
+              isTe ? 'టర్న్-బై-టర్న్ నావిగేషన్ సిద్ధం' : 'Offline GPS turn-by-turn guidance',
+            ].map((text, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-800/60 p-2.5 rounded-xl">
+                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-medium">{text}</span>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

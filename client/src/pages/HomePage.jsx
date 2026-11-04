@@ -140,15 +140,15 @@ export default function HomePage() {
     <div className="min-h-full pb-20 bg-[#fffdf9] dark:bg-[#090d16] text-stone-900 dark:text-slate-100 transition-colors">
       {/* ── Sacred Welcome Hero Section (Original Layout with River & Ghat Background) ── */}
       <section className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-center text-white shadow-xl pt-8 pb-12 px-4">
-        {/* Authentic Godavari Pushkaralu Ghat Pilgrimage Background Photo */}
+        {/* Authentic Godavari Pushkaralu Arch Bridge & Riverfront Background Photo (User Reference Image 2) */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 transition-transform duration-1000"
           style={{
-            backgroundImage: `url('/pushkar-ghat.jpg')`,
+            backgroundImage: `url('/godavari-arch-bridge.jpg')`,
           }}
         />
-        {/* Sacred Saffron & Crimson Gradient Overlay for Perfect Contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#7f1d1d]/85 via-[#991b1b]/75 to-[#7f1d1d]/90 transition-colors" />
+        {/* Sacred Overlay allowing the Arch Bridge, Train, and River crowds to be clearly visible */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#7f1d1d]/65 via-[#881337]/50 to-[#7f1d1d]/75 transition-colors" />
 
         {/* Ambient Glow Orbs */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
@@ -242,53 +242,6 @@ export default function HomePage() {
               {isTe ? 'వెతకండి' : isHi ? 'खोजें' : 'Search'}
             </button>
           </form>
-        </div>
-
-        {/* ── Official Pushkaram Bulletins & Alerts (Matching User Reference Image 2) ── */}
-        <OfficialAlertsBanner />
-
-        {/* ── Pushkaralu Events & Cultural Schedule Spotlight Card ── */}
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-[#991b1b] rounded-3xl p-5 text-white shadow-lg mb-8 relative overflow-hidden group">
-          <div className="absolute right-0 top-0 -mr-6 -mt-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-2xl text-amber-200 shadow-inner shrink-0">
-                <Calendar size={26} className="text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-300 text-stone-900 px-2 py-0.5 rounded-full">
-                    Official Schedule
-                  </span>
-                  <span className="text-xs text-amber-100 flex items-center gap-1 font-semibold">
-                    <Sparkles size={12} className="text-amber-300" />
-                    Cultural Programmes
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-black text-white mt-0.5 leading-snug">
-                  {isTe
-                    ? 'గోదావరి పుష్కర సాంస్కృతిక వేడుకలు & ఈవెంట్స్'
-                    : isHi
-                    ? 'गोदावरी पुष्करालु सांस्कृतिक कार्यक्रम एवं संगीत'
-                    : 'Godavari Pushkaralu Cultural Programmes & Events'}
-                </h3>
-                <p className="text-xs text-amber-100/90 mt-0.5 line-clamp-1">
-                  {isTe
-                    ? 'గోదావరి మహా హారతి, ప్రముఖుల సంగీత కచేరీలు, కూచిపూడి నృత్యాలు & భక్తి కార్యక్రమాలు'
-                    : isHi
-                    ? 'महा आरती, भक्ति संगीत, कुचिपुड़ी नृत्य एवं नाट्य प्रदर्शन'
-                    : 'Maha Harathi, music concerts, classical Kuchipudi dances & Vedic discourses.'}
-                </p>
-              </div>
-            </div>
-
-            <Link
-              to="/events"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-2.5 px-5 bg-white text-[#881337] hover:bg-amber-100 font-extrabold text-xs rounded-xl shadow-md active:scale-95 transition shrink-0"
-            >
-              <span>{isTe ? 'కార్యక్రమాల వివరాలు →' : isHi ? 'कार्यक्रम देखें →' : 'Learn More / View Schedule →'}</span>
-            </Link>
-          </div>
         </div>
 
         {/* ── Facility Category Grid (Screen 2) ── */}

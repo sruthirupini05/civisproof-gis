@@ -1,132 +1,153 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Compass, CheckCircle2 } from 'lucide-react';
-import LanguageSelector from './LanguageSelector.jsx';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { useLanguageStore } from '../../store/useStore.js';
 
-export default function PushkaramWelcomeScreen({ scannedToken, scannedFacility, onContinue }) {
+export default function PushkaramWelcomeScreen({ onContinue, scannedToken, scannedFacility }) {
   const navigate = useNavigate();
-  const { currentLang } = useLanguageStore();
+  const { currentLang, setLanguage } = useLanguageStore();
+  const [langOpen, setLangOpen] = useState(false);
 
-  const isTe = (currentLang || 'te').startsWith('te');
-  const isHi = (currentLang || 'te').startsWith('hi');
+  const isTe = (currentLang || 'en').startsWith('te');
+  const isHi = (currentLang || 'en').startsWith('hi');
 
-  const handleProceed = () => {
-    if (onContinue) {
-      onContinue();
-      return;
-    }
+  const t = (en, te, hi) => (isTe ? te : isHi ? hi : en);
+
+  const handleFindFacilities = () => {
+    if (onContinue) { onContinue(); }
     if (scannedToken) {
       navigate(`/facility/${encodeURIComponent(scannedToken)}`);
     } else {
-      navigate('/');
+      navigate('/map');
     }
   };
 
+  const handleExploreNearby = () => {
+    if (onContinue) { onContinue(); }
+    navigate('/explore');
+  };
+
+  const LANGS = [
+    { code: 'en', label: 'EN', name: 'English' },
+    { code: 'te', label: 'TE', name: 'Telugu' },
+    { code: 'hi', label: 'HI', name: 'Hindi' },
+  ];
+
+  const currentLangLabel = LANGS.find(l => (currentLang || 'en').startsWith(l.code))?.label || 'EN';
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#fffdf9] flex flex-col items-center justify-between overflow-y-auto select-none animate-in fade-in zoom-in-95 duration-300">
-      {/* ── Top Sacred Wave Crest ── */}
-      <div className="w-full relative">
-        <div className="h-14 sm:h-16 w-full bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] rounded-b-[40px] shadow-md flex items-center justify-end px-6">
-          {/* Language Selector Top Right */}
-          <div className="scale-95">
-            <LanguageSelector />
-          </div>
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden select-none"
+      style={{
+        backgroundImage: 'url(/godavari-arch-bridge.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+      }}
+    >
+      {/* Warm golden overlay – light enough to see the photo clearly */}
+      <div className="absolute inset-0 bg-gradient-to-b from-amber-900/30 via-amber-800/20 to-amber-900/50 pointer-events-none" />
+
+      {/* Language Selector – top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <div className="relative">
+          <button
+            onClick={() => setLangOpen(o => !o)}
+            className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-stone-800 font-black text-xs px-3 py-1.5 rounded-full shadow border border-white/60"
+          >
+            {currentLangLabel} <span className="text-[10px]">▼</span>
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden min-w-[100px]">
+              {LANGS.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => { setLanguage(l.code); setLangOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-amber-50 transition ${
+                    (currentLang || 'en').startsWith(l.code) ? 'text-[#991b1b]' : 'text-stone-700'
+                  }`}
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-sm w-full mx-auto px-6 py-4 flex-1 flex flex-col items-center text-center justify-center space-y-4">
-        {/* Sacred Om Emblem & Title (Matching Image 3) */}
-        <div className="flex flex-col items-center">
-          <div className="text-4xl sm:text-5xl font-black text-[#991b1b] leading-none mb-1">
+      {/* Content Card – centred, max 360px wide like a phone screen */}
+      <div className="relative z-10 w-full max-w-sm mx-auto px-6 flex flex-col items-center text-center space-y-5 py-10">
+
+        {/* Om symbol */}
+        <div className="flex flex-col items-center space-y-1">
+          <div
+            className="text-5xl font-black leading-none drop-shadow-lg"
+            style={{ color: '#c0392b', textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}
+          >
             ॐ
           </div>
-          {/* Gold & Blue Wave Ribbons below Om */}
-          <div className="w-20 h-1.5 bg-gradient-to-r from-amber-400 via-sky-400 to-amber-500 rounded-full mb-2" />
-
-          <h1 className="text-2xl sm:text-3xl font-black text-[#881337] font-serif tracking-tight leading-tight">
-            {isTe ? 'గోదావరి పుష్కరాలు 2027' : isHi ? 'गोदावरी पुष्करालु 2027' : 'Godavari Pushkaralu 2027'}
-          </h1>
+          {/* Coloured wave ribbon */}
+          <div className="w-24 h-1.5 bg-gradient-to-r from-amber-400 via-sky-400 to-amber-500 rounded-full" />
         </div>
 
-        {/* ── Pushkaralu River Ghats & Temples Photo Banner (Image 3) ── */}
-        <div className="relative w-full h-56 sm:h-64 rounded-3xl overflow-hidden shadow-xl border-2 border-amber-300/60 bg-amber-50">
-          <img
-            src="/pushkar-ghat.jpg"
-            alt="Godavari Pushkaralu Riverfront"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/pushkaralu-hero.jpg';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        </div>
+        {/* Title */}
+        <h1
+          className="text-3xl font-black font-serif leading-tight drop-shadow-xl"
+          style={{ color: '#7f1d1d', textShadow: '0 2px 10px rgba(255,255,255,0.7)' }}
+        >
+          {t('Godavari\nPushkaralu\n2027', 'గోదావరి\nపుష్కరాలు\n2027', 'गोदावरी\nपुष्करालु\n2027')}
+        </h1>
 
-        {/* ── Scanned Facility Indicator ── */}
-        {scannedToken && (
-          <div className="w-full bg-amber-50 border border-amber-300 rounded-2xl p-2.5 flex items-center justify-center gap-2 shadow-xs">
-            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-            <span className="text-xs font-bold text-amber-950 truncate">
-              {scannedFacility ? `Scanned: ${scannedFacility.name}` : `Scanned Code: ${scannedToken}`}
-            </span>
-          </div>
-        )}
-
-        {/* ── Welcome Heading ── */}
+        {/* Welcome text */}
         <div className="space-y-1">
-          <h2 className="text-lg sm:text-xl font-black text-[#881337] leading-snug">
-            {isTe
-              ? 'గోదావరి పుష్కరాలు 2027 కు స్వాగతం'
-              : isHi
-              ? 'गोदावरी पुष्करालु 2027 में आपका स्वागत है'
-              : 'Welcome to Godavari Pushkaralu 2027'}
+          <h2 className="text-lg font-black text-stone-900 drop-shadow-sm">
+            {t('Welcome to Godavari Pushkaralu 2027', 'గోదావరి పుష్కరాలు 2027కి స్వాగతం', 'गोदावरी पुष्करालु 2027 में आपका स्वागत है')}
           </h2>
-          <p className="text-xs sm:text-sm text-stone-600 font-medium">
-            {isTe
-              ? 'మీ సమీపంలో ఉన్న ముఖ్యమైన సౌకర్యాలను కనుగొనండి.'
-              : isHi
-              ? 'अपने निकटतम आवश्यक सुविधाएं खोजें।'
-              : 'Find essential facilities near you.'}
+          <p className="text-sm font-semibold text-stone-700">
+            {t('Find essential facilities near you.', 'మీ సమీపంలో ముఖ్యమైన సౌకర్యాలను కనుగొనండి.', 'अपने आस-पास जरूरी सुविधाएं खोजें।')}
           </p>
         </div>
 
-        {/* ── Action Buttons (Matching Image 3) ── */}
-        <div className="w-full space-y-2.5 pt-2">
-          {/* Crimson Primary Button */}
+        {/* Scanned badge */}
+        {scannedToken && (
+          <div className="w-full bg-white/80 backdrop-blur-sm border border-amber-300 rounded-2xl px-3 py-2 text-xs font-bold text-amber-900 flex items-center gap-2 justify-center shadow">
+            ✅ {scannedFacility ? `Scanned: ${scannedFacility.name}` : `QR Code: ${scannedToken}`}
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="w-full space-y-3 pt-2">
           <button
-            onClick={handleProceed}
-            className="w-full py-3.5 px-6 bg-[#991b1b] hover:bg-[#881337] text-white font-black text-sm rounded-full shadow-lg shadow-red-950/20 flex items-center justify-center gap-2 active:scale-98 transition"
+            onClick={handleFindFacilities}
+            className="w-full py-4 px-6 font-black text-sm text-white rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-95 transition"
+            style={{ background: 'linear-gradient(135deg, #991b1b, #7f1d1d)' }}
           >
             <span>
               {scannedToken
-                ? (isTe ? 'సౌకర్యం వివరాలు చూడండి' : 'View Scanned Facility')
-                : (isTe ? 'సౌకర్యాలను కనుగొనండి' : isHi ? 'सुविधाएं खोजें' : 'Find Facilities')}
+                ? t('View Facility', 'సౌకర్యం చూడండి', 'सुविधा देखें')
+                : t('Find Facilities', 'సౌకర్యాలు కనుగొనండి', 'सुविधाएं खोजें')}
             </span>
-            <ArrowRight size={16} />
+            <ArrowRight size={18} />
           </button>
 
-          {/* Golden Secondary Button */}
           <button
-            onClick={() => navigate('/explore')}
-            className="w-full py-3.5 px-6 bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200 hover:from-amber-300 hover:to-amber-400 border border-amber-400/80 text-amber-950 font-black text-sm rounded-full shadow-sm flex items-center justify-center gap-2 active:scale-98 transition"
+            onClick={handleExploreNearby}
+            className="w-full py-4 px-6 font-black text-sm rounded-full flex items-center justify-center gap-2 shadow active:scale-95 transition border border-amber-400/80"
+            style={{ background: 'linear-gradient(135deg, #fde68a, #fbbf24, #fde68a)', color: '#78350f' }}
           >
-            <Compass size={16} className="text-amber-800" />
-            <span>{isTe ? 'సమీపంలో అన్వేషించండి' : isHi ? 'आस-पास देखें' : 'Explore Nearby'}</span>
+            <MapPin size={18} className="text-amber-800" />
+            <span>{t('Explore Nearby', 'సమీపంలో అన్వేషించండి', 'आस-पास खोजें')}</span>
           </button>
 
-          {/* Continue to Home */}
           <button
-            onClick={() => navigate('/')}
-            className="text-xs font-bold text-stone-500 hover:text-stone-800 pt-1 underline"
+            onClick={() => {
+              if (onContinue) onContinue();
+              navigate('/');
+            }}
+            className="w-full text-center text-xs font-bold text-stone-700 hover:text-stone-900 pt-2 underline transition"
           >
-            {isTe ? 'హోమ్ పేజీకి వెళ్లండి' : 'Continue to Home Screen'}
+            {t('Continue to Home Screen →', 'హోమ్‌ స్క్రీన్‌కు కొనసాగండి →', 'होम स्क्रीन पर आगे बढ़ें →')}
           </button>
         </div>
-      </div>
-
-      {/* ── Bottom Sacred Wave Crest ── */}
-      <div className="w-full">
-        <div className="h-8 sm:h-10 w-full bg-gradient-to-r from-amber-500 via-[#991b1b] to-amber-600 rounded-t-[40px] opacity-90" />
       </div>
     </div>
   );

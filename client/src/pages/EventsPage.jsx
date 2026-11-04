@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -14,8 +14,10 @@ import {
   Users,
   Flame,
   Plus,
+  ShieldCheck,
 } from 'lucide-react';
 import pushkaraluEvents from '../data/pushkaraluEvents.json';
+import { getStoredEvents } from '../services/eventsService.js';
 import { useLanguageStore, useThemeStore, useAuthStore } from '../store/useStore.js';
 
 export default function EventsPage() {
@@ -27,7 +29,19 @@ export default function EventsPage() {
   const isTe = (currentLang || 'te').startsWith('te');
   const isHi = (currentLang || 'te').startsWith('hi');
 
-  const [eventsList, setEventsList] = useState(pushkaraluEvents || []);
+  const [eventsList, setEventsList] = useState(() => getStoredEvents());
+
+  useEffect(() => {
+    const handleEventsUpdate = () => {
+      setEventsList(getStoredEvents());
+    };
+    window.addEventListener('pushkaram_events_updated', handleEventsUpdate);
+    window.addEventListener('storage', handleEventsUpdate);
+    return () => {
+      window.removeEventListener('pushkaram_events_updated', handleEventsUpdate);
+      window.removeEventListener('storage', handleEventsUpdate);
+    };
+  }, []);
   const [selectedDate, setSelectedDate] = useState('all'); // 'all' | 'today' | date string
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'harathi' | 'concert' | 'dance' | 'drama' | 'devotional'
   const [toastMsg, setToastMsg] = useState('');
@@ -88,9 +102,20 @@ export default function EventsPage() {
             <span>{isTe ? 'వెనుకకు' : isHi ? 'पीछे' : 'Back'}</span>
           </button>
 
-          <span className="text-xs bg-amber-400 text-stone-900 font-black px-3 py-1 rounded-full shadow-xs">
-            {eventsList.length} {isTe ? 'ధృవీకరించబడిన కార్యక్రమాలు' : 'Verified Events'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-amber-400 text-stone-900 font-black px-3 py-1 rounded-full shadow-xs">
+              {eventsList.length} {isTe ? 'కార్యక్రమాలు' : 'Verified Events'}
+            </span>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin/dashboard?tab=events')}
+                className="py-1 px-3 bg-amber-300 hover:bg-amber-200 text-stone-900 font-black text-xs rounded-full flex items-center gap-1 shadow-sm transition"
+              >
+                <Plus size={13} />
+                <span>{isTe ? 'నిర్వహించండి' : 'Manage Events'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto">

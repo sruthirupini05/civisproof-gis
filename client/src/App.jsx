@@ -1,9 +1,10 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/UI/Layout.jsx';
 import LoadingSpinner from './components/UI/LoadingSpinner.jsx';
 import OfflineIndicator from './components/UI/OfflineIndicator.jsx';
 import ProtectedRoute from './components/UI/ProtectedRoute.jsx';
+import PushkaramWelcomeScreen from './components/UI/PushkaramWelcomeScreen.jsx';
 import { cacheAllFacilities } from './services/db.js';
 import { facilitiesAPI } from './services/api.js';
 import { setupOnlineSync } from './services/sync.js';
@@ -33,6 +34,25 @@ const EventsPage = lazy(() => import('./pages/EventsPage.jsx'));
 
 export default function App() {
   const { mode, setMode, refreshSystemTheme } = useThemeStore();
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path.startsWith('/inspect') || path.startsWith('/admin') || path.startsWith('/dashboard')) {
+          return false;
+        }
+        return !sessionStorage.getItem('pushkaram_welcomed');
+      }
+    } catch {}
+    return false;
+  });
+
+  const handleDismissWelcome = () => {
+    try {
+      sessionStorage.setItem('pushkaram_welcomed', '1');
+    } catch {}
+    setShowWelcome(false);
+  };
 
   useEffect(() => {
     // Initial theme apply
@@ -80,6 +100,7 @@ export default function App() {
 
   return (
     <>
+      {showWelcome && <PushkaramWelcomeScreen onContinue={handleDismissWelcome} />}
       <OfflineIndicator />
       <Suspense fallback={<LoadingSpinner fullScreen />}>
         <Routes>
@@ -100,6 +121,7 @@ export default function App() {
             <Route path="facility/:token" element={<FacilityPage />} />
             <Route path="navigate/:facilityId" element={<NavigatePage />} />
             <Route path="help" element={<HelpPage />} />
+            <Route path="learn-more" element={<HelpPage />} />
             <Route path="saved" element={<HelpPage />} />
             <Route path="scan" element={<ScanPage />} />
             <Route path="city-qr" element={<CityQRPage />} />
