@@ -57,6 +57,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'trn-rly-rjy',
@@ -72,6 +73,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Rajahmundry_Railway_Station_Entrance.jpg/800px-Rajahmundry_Railway_Station_Entrance.jpg',
   },
   {
     id: 'trn-rly-gvn',
@@ -87,6 +89,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Rajahmundry_Railway_Station_Entrance.jpg/800px-Rajahmundry_Railway_Station_Entrance.jpg',
   },
   {
     id: 'trn-rly-kvvr',
@@ -102,6 +105,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/c/cc/River_Godavari_from_arch_bridge_at_Rajahmundry_01.jpg',
   },
   {
     id: 'trn-bus-rtc',
@@ -117,6 +121,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'trn-bus-ktp',
@@ -132,6 +137,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'trn-bus-mor',
@@ -147,6 +153,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'trn-bus-arts',
@@ -162,6 +169,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'trn-ferry-push',
@@ -177,6 +185,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NTR_statue_in_Rajahmundry_pushkar_ghat.jpg/960px-NTR_statue_in_Rajahmundry_pushkar_ghat.jpg',
   },
   {
     id: 'trn-ferry-srsw',
@@ -192,6 +201,7 @@ const VERIFIED_TRANSPORT_HUBS = [
     data_source: 'official_gis',
     is_verified: 1,
     operational_status: 'operational',
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Pushkar_ghat_at_Rajahmundry.jpg/960px-Pushkar_ghat_at_Rajahmundry.jpg',
   },
 ];
 
@@ -429,9 +439,22 @@ export default function TransportHubsPage() {
               return (
                 <div
                   key={item.id}
-                  className="p-4 rounded-3xl bg-white dark:bg-stone-900 border border-indigo-100 dark:border-stone-800 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+                  className="p-4 rounded-3xl bg-white dark:bg-stone-900 border border-indigo-100 dark:border-stone-800 shadow-xs hover:shadow-md transition flex flex-col justify-between overflow-hidden"
                 >
                   <div>
+                    {item.image_url && (
+                      <div className="relative h-32 -mx-4 -mt-4 mb-3 overflow-hidden bg-stone-100 dark:bg-stone-800">
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.parentElement.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      </div>
+                    )}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-1.5">

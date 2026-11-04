@@ -37,10 +37,10 @@ function normalizeSlug(str) {
 }
 
 const CATEGORY_DEFAULT_IMAGES = {
-  toilet: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&auto=format&fit=crop&q=80',
+  toilet: '/public-washroom.jpg',
   ghat: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Godavari_River_at_Rajahmundry.jpg/800px-Godavari_River_at_Rajahmundry.jpg',
   water: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=800&auto=format&fit=crop&q=80',
-  medical: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=800&auto=format&fit=crop&q=80',
+  medical: 'https://images.unsplash.com/photo-1587745416684-47953f16f02f?w=800&auto=format&fit=crop&q=80',
   petrol: 'https://images.unsplash.com/photo-1527018607637-a24255af41ff?w=800&auto=format&fit=crop&q=80',
   ev_charging: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80',
   transport: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Rajahmundry_Railway_Station_Entrance.jpg/800px-Rajahmundry_Railway_Station_Entrance.jpg',
@@ -288,7 +288,7 @@ export default function FacilityPage() {
             alt={displayName}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.src = CATEGORY_DEFAULT_IMAGES.toilet;
+              e.target.src = CATEGORY_DEFAULT_IMAGES[facility.category] || '/public-washroom.jpg';
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
