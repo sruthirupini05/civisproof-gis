@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin, Compass, Home, Globe } from 'lucide-react';
 import { useLanguageStore } from '../../store/useStore.js';
 
 export default function PushkaramWelcomeScreen({ onContinue, scannedToken, scannedFacility }) {
@@ -14,7 +14,7 @@ export default function PushkaramWelcomeScreen({ onContinue, scannedToken, scann
   const t = (en, te, hi) => (isTe ? te : isHi ? hi : en);
 
   const handleFindFacilities = () => {
-    if (onContinue) { onContinue(); }
+    if (onContinue) onContinue();
     if (scannedToken) {
       navigate(`/facility/${encodeURIComponent(scannedToken)}`);
     } else {
@@ -23,50 +23,64 @@ export default function PushkaramWelcomeScreen({ onContinue, scannedToken, scann
   };
 
   const handleExploreNearby = () => {
-    if (onContinue) { onContinue(); }
+    if (onContinue) onContinue();
     navigate('/explore');
+  };
+
+  const handleGoHome = () => {
+    if (onContinue) onContinue();
+    navigate('/');
   };
 
   const LANGS = [
     { code: 'en', label: 'EN', name: 'English' },
-    { code: 'te', label: 'TE', name: 'Telugu' },
-    { code: 'hi', label: 'HI', name: 'Hindi' },
+    { code: 'te', label: 'TE', name: 'తెలుగు (Telugu)' },
+    { code: 'hi', label: 'HI', name: 'हिन्दी (Hindi)' },
   ];
 
-  const currentLangLabel = LANGS.find(l => (currentLang || 'en').startsWith(l.code))?.label || 'EN';
+  const currentLangLabel = LANGS.find((l) => (currentLang || 'en').startsWith(l.code))?.label || 'EN';
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden select-none"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-y-auto p-4 sm:p-6 select-none"
       style={{
         backgroundImage: 'url(/godavari-arch-bridge.jpg)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center top',
+        backgroundPosition: 'center center',
       }}
     >
-      {/* Warm golden overlay – light enough to see the photo clearly */}
-      <div className="absolute inset-0 bg-gradient-to-b from-amber-900/30 via-amber-800/20 to-amber-900/50 pointer-events-none" />
+      {/* Darkened backdrop with blur so the sacred card stands out dramatically */}
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] pointer-events-none" />
 
-      {/* Language Selector – top right */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Language Selector – Top Right */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
         <div className="relative">
           <button
-            onClick={() => setLangOpen(o => !o)}
-            className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-stone-800 font-black text-xs px-3 py-1.5 rounded-full shadow border border-white/60"
+            onClick={() => setLangOpen((o) => !o)}
+            className="flex items-center gap-1.5 bg-white/95 text-stone-900 font-black text-xs sm:text-sm px-4 py-2 rounded-full shadow-lg border-2 border-amber-400 hover:bg-white active:scale-95 transition"
           >
-            {currentLangLabel} <span className="text-[10px]">▼</span>
+            <Globe size={15} className="text-[#991b1b]" />
+            <span>{currentLangLabel}</span>
+            <span className="text-[10px] text-stone-500">▼</span>
           </button>
+
           {langOpen && (
-            <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden min-w-[100px]">
-              {LANGS.map(l => (
+            <div className="absolute right-0 top-11 bg-white rounded-2xl shadow-2xl border-2 border-amber-300 overflow-hidden min-w-[170px] z-30 animate-in fade-in slide-in-from-top-2">
+              {LANGS.map((l) => (
                 <button
                   key={l.code}
-                  onClick={() => { setLanguage(l.code); setLangOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-amber-50 transition ${
-                    (currentLang || 'en').startsWith(l.code) ? 'text-[#991b1b]' : 'text-stone-700'
+                  onClick={() => {
+                    setLanguage(l.code);
+                    setLangOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm font-extrabold hover:bg-amber-50 transition flex items-center justify-between ${
+                    (currentLang || 'en').startsWith(l.code)
+                      ? 'bg-amber-100/60 text-[#991b1b]'
+                      : 'text-stone-800'
                   }`}
                 >
-                  {l.name}
+                  <span>{l.name}</span>
+                  {(currentLang || 'en').startsWith(l.code) && <span>✓</span>}
                 </button>
               ))}
             </div>
@@ -74,78 +88,92 @@ export default function PushkaramWelcomeScreen({ onContinue, scannedToken, scann
         </div>
       </div>
 
-      {/* Content Card – centred, max 360px wide like a phone screen */}
-      <div className="relative z-10 w-full max-w-sm mx-auto px-6 flex flex-col items-center text-center space-y-5 py-10">
-
-        {/* Om symbol */}
+      {/* Main Sacred Welcome Card (High Visibility, Large Fonts, Contrast) */}
+      <div className="relative z-10 w-full max-w-md mx-auto bg-[#fffdf9]/95 dark:bg-[#181110]/95 backdrop-blur-md rounded-[32px] sm:rounded-[36px] shadow-2xl border-2 border-amber-400/90 p-6 sm:p-8 flex flex-col items-center text-center space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200">
+        {/* Sacred Om Symbol */}
         <div className="flex flex-col items-center space-y-1">
           <div
-            className="text-5xl font-black leading-none drop-shadow-lg"
-            style={{ color: '#c0392b', textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}
+            className="text-6xl sm:text-7xl font-black leading-none drop-shadow-md select-none"
+            style={{ color: '#b91c1c' }}
           >
             ॐ
           </div>
-          {/* Coloured wave ribbon */}
-          <div className="w-24 h-1.5 bg-gradient-to-r from-amber-400 via-sky-400 to-amber-500 rounded-full" />
+          {/* Gold & Azure Wave Ribbons */}
+          <div className="w-28 h-2 bg-gradient-to-r from-amber-400 via-sky-400 to-amber-500 rounded-full shadow-xs" />
         </div>
 
-        {/* Title */}
-        <h1
-          className="text-3xl font-black font-serif leading-tight drop-shadow-xl"
-          style={{ color: '#7f1d1d', textShadow: '0 2px 10px rgba(255,255,255,0.7)' }}
-        >
-          {t('Godavari\nPushkaralu\n2027', 'గోదావరి\nపుష్కరాలు\n2027', 'गोदावरी\nपुष्करालु\n2027')}
-        </h1>
-
-        {/* Welcome text */}
+        {/* Big Bold Event Title */}
         <div className="space-y-1">
-          <h2 className="text-lg font-black text-stone-900 drop-shadow-sm">
-            {t('Welcome to Godavari Pushkaralu 2027', 'గోదావరి పుష్కరాలు 2027కి స్వాగతం', 'गोदावरी पुष्करालु 2027 में आपका स्वागत है')}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black font-serif text-[#881337] dark:text-amber-300 leading-tight tracking-tight">
+            {t('Godavari Pushkaralu 2027', 'గోదావరి పుష్కరాలు 2027', 'गोदावरी पुष्करालु 2027')}
+          </h1>
+          <div className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest">
+            {t('Rajamahendravaram • Andhra Pradesh', 'రాజమహేంద్రవరం • ఆంధ్రప్రదేశ్', 'राजमहेंद्रवरम • आंध्र प्रदेश')}
+          </div>
+        </div>
+
+        {/* Welcome Subtitle & Mission */}
+        <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 rounded-2xl p-3.5 w-full space-y-1">
+          <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-white leading-snug">
+            {t(
+              'Welcome to Godavari Pushkaralu 2027',
+              'గోదావరి పుష్కరాలు 2027కి స్వాగతం',
+              'गोदावरी पुष्करालु 2027 में आपका स्वागत है'
+            )}
           </h2>
-          <p className="text-sm font-semibold text-stone-700">
-            {t('Find essential facilities near you.', 'మీ సమీపంలో ముఖ్యమైన సౌకర్యాలను కనుగొనండి.', 'अपने आस-पास जरूरी सुविधाएं खोजें।')}
+          <p className="text-xs sm:text-sm font-semibold text-stone-700 dark:text-stone-300 leading-relaxed">
+            {t(
+              'Find essential verified facilities, ghats, and travel navigation near you.',
+              'మీ సమీపంలో ఉన్న అధికారిక ఘాట్‌లు, పవిత్ర స్నాన ప్రదేశాలు మరియు వసతులను కనుగొనండి.',
+              'अपने आस-पास प्रामाणिक घाट, पवित्र स्नान स्थल और सुविधाएं खोजें।'
+            )}
           </p>
         </div>
 
-        {/* Scanned badge */}
+        {/* Scanned Badge (if arriving via QR Code) */}
         {scannedToken && (
-          <div className="w-full bg-white/80 backdrop-blur-sm border border-amber-300 rounded-2xl px-3 py-2 text-xs font-bold text-amber-900 flex items-center gap-2 justify-center shadow">
-            ✅ {scannedFacility ? `Scanned: ${scannedFacility.name}` : `QR Code: ${scannedToken}`}
+          <div className="w-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 rounded-2xl px-3.5 py-2 text-xs font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-2 justify-center shadow-xs">
+            <span>✅</span>
+            <span>{scannedFacility ? `Scanned: ${scannedFacility.name}` : `QR Code: ${scannedToken}`}</span>
           </div>
         )}
 
-        {/* Buttons */}
-        <div className="w-full space-y-3 pt-2">
+        {/* Action Buttons */}
+        <div className="w-full space-y-3 pt-1">
+          {/* 1. Primary Find Facilities Button */}
           <button
             onClick={handleFindFacilities}
-            className="w-full py-4 px-6 font-black text-sm text-white rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-95 transition"
-            style={{ background: 'linear-gradient(135deg, #991b1b, #7f1d1d)' }}
+            className="w-full py-4 px-6 text-sm sm:text-base font-black text-white rounded-full flex items-center justify-center gap-2.5 shadow-xl hover:shadow-2xl active:scale-98 transition"
+            style={{ background: 'linear-gradient(135deg, #991b1b 0%, #881337 50%, #7f1d1d 100%)' }}
           >
             <span>
               {scannedToken
-                ? t('View Facility', 'సౌకర్యం చూడండి', 'सुविधा देखें')
+                ? t('View Scanned Facility', 'స్కాన్ చేసిన సౌకర్యం చూడండి', 'स्कैन की गई सुविधा देखें')
                 : t('Find Facilities', 'సౌకర్యాలు కనుగొనండి', 'सुविधाएं खोजें')}
             </span>
-            <ArrowRight size={18} />
+            <ArrowRight size={20} className="stroke-[2.5]" />
           </button>
 
+          {/* 2. Secondary Explore Nearby Button */}
           <button
             onClick={handleExploreNearby}
-            className="w-full py-4 px-6 font-black text-sm rounded-full flex items-center justify-center gap-2 shadow active:scale-95 transition border border-amber-400/80"
-            style={{ background: 'linear-gradient(135deg, #fde68a, #fbbf24, #fde68a)', color: '#78350f' }}
+            className="w-full py-3.5 px-6 text-sm sm:text-base font-black rounded-full flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg active:scale-98 transition border-2 border-amber-400"
+            style={{
+              background: 'linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #fde047 100%)',
+              color: '#713f12',
+            }}
           >
-            <MapPin size={18} className="text-amber-800" />
+            <MapPin size={19} className="text-amber-900 stroke-[2.5]" />
             <span>{t('Explore Nearby', 'సమీపంలో అన్వేషించండి', 'आस-पास खोजें')}</span>
           </button>
 
+          {/* 3. Clearly Visible "Continue to Home Screen" Pill Button */}
           <button
-            onClick={() => {
-              if (onContinue) onContinue();
-              navigate('/');
-            }}
-            className="w-full text-center text-xs font-bold text-stone-700 hover:text-stone-900 pt-2 underline transition"
+            onClick={handleGoHome}
+            className="w-full py-3 px-5 text-xs sm:text-sm font-black text-stone-800 dark:text-stone-200 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-full border border-stone-300 dark:border-stone-600 shadow-sm flex items-center justify-center gap-2 active:scale-98 transition"
           >
-            {t('Continue to Home Screen →', 'హోమ్‌ స్క్రీన్‌కు కొనసాగండి →', 'होम स्क्रीन पर आगे बढ़ें →')}
+            <Home size={16} className="text-[#991b1b]" />
+            <span>{t('Continue to Home Screen →', 'హోమ్‌ స్క్రీన్‌కు కొనసాగండి →', 'होम स्क्रीन पर आगे बढ़ें →')}</span>
           </button>
         </div>
       </div>
