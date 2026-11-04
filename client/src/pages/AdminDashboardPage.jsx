@@ -296,8 +296,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* ── Tabs: Manage Facilities | Add Facility | Reported Issues ── */}
-        <div className="flex gap-2 border-b border-stone-200 dark:border-slate-800 pb-2">
+        {/* ── Tabs: Manage Facilities | Add Facility | Reported Issues | Inspectors ── */}
+        <div className="flex flex-wrap gap-2 border-b border-stone-200 dark:border-slate-800 pb-2">
           <button
             onClick={() => setActiveTab('manage')}
             className={`py-2 px-4 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -326,6 +326,16 @@ export default function AdminDashboardPage() {
           >
             <AlertTriangle size={15} />
             <span>Reported Issues ({issues.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('inspectors')}
+            className={`py-2 px-4 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              activeTab === 'inspectors' ? 'bg-[#991b1b] text-white shadow-xs' : 'text-stone-600 dark:text-slate-400 hover:bg-slate-100'
+            }`}
+          >
+            <ShieldCheck size={15} />
+            <span>Inspector Accounts</span>
           </button>
         </div>
 
@@ -628,6 +638,108 @@ export default function AdminDashboardPage() {
                   >
                     Mark Resolved
                   </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 4: INSPECTOR ACCOUNTS & ASSIGNMENTS ── */}
+        {activeTab === 'inspectors' && (
+          <div className="space-y-4">
+            <div className="bg-indigo-50 dark:bg-indigo-950/20 p-4 rounded-3xl border border-indigo-200 dark:border-indigo-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-extrabold text-sm text-indigo-950 dark:text-indigo-300 flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-indigo-600 dark:text-indigo-400" />
+                  <span>Authorized Field Inspectors & Sanitation Assignments</span>
+                </h2>
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+                  Manage field verification teams, credentials setup with bcrypt/SHA-256 hashing, and assign monitoring duties for Ghats and water kiosks.
+                </p>
+              </div>
+              <Link
+                to="/login"
+                className="self-start sm:self-auto py-2 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+              >
+                Register Credentials
+              </Link>
+            </div>
+
+            {/* List of Inspectors */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                {
+                  username: 'inspector1',
+                  role: 'Chief Field Inspector',
+                  zone: 'Zone 1 — Pushkar Ghat & Main Riverfront',
+                  assignedFacilities: ['Pushkar Ghat', 'Panchavati Ghat', 'RO Water Station 01'],
+                  lastActive: 'Today 08:30 AM',
+                  status: 'Active on Duty',
+                },
+                {
+                  username: 'inspector2_kotilingala',
+                  role: 'Ghat Safety Inspector',
+                  zone: 'Zone 2 — Kotilingala & Saraswathi Ghats',
+                  assignedFacilities: ['Kotilingala Ghat', 'Saraswathi Ghat', 'Emergency First-Aid Post'],
+                  lastActive: 'Today 07:45 AM',
+                  status: 'Active on Duty',
+                },
+                {
+                  username: 'inspector3_transit',
+                  role: 'Transit & Cleanliness Inspector',
+                  zone: 'Zone 3 — Railway Stations & Bus Complexes',
+                  assignedFacilities: ['Main Railway Station Washrooms', 'APSRTC Terminal Water Point'],
+                  lastActive: 'Yesterday 18:20',
+                  status: 'Off-duty (Rest)',
+                },
+                {
+                  username: 'field1',
+                  role: 'Sanitation Maintenance Staff',
+                  zone: 'Zone 4 — Dowleswaram & Gowthami Ghats',
+                  assignedFacilities: ['Gowthami Ghat Bio-toilets', 'Dowleswaram Barrage Steps'],
+                  lastActive: 'Today 06:15 AM',
+                  status: 'Active on Duty',
+                },
+              ].map((ins, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-stone-200 dark:border-slate-800 shadow-2xs space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-xs">
+                        {ins.username[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-sm text-stone-900 dark:text-white">
+                          {ins.username}
+                        </div>
+                        <div className="text-[11px] text-stone-500">{ins.role}</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      {ins.status}
+                    </span>
+                  </div>
+
+                  <div className="text-xs bg-stone-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-1">
+                    <div className="text-[11px] font-bold text-stone-700 dark:text-stone-300">
+                      📍 {ins.zone}
+                    </div>
+                    <div className="text-[10px] text-stone-500">
+                      Assigned: {ins.assignedFacilities.join(' • ')}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-stone-400 pt-1">
+                    <span>Last synced: {ins.lastActive}</span>
+                    <Link
+                      to="/dashboard"
+                      className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
+                    >
+                      View Reports →
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

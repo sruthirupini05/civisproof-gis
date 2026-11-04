@@ -86,10 +86,11 @@ export async function initDB() {
   }
 
   // Seed or sync facilities
-  const countRow = db.prepare('SELECT COUNT(*) as c FROM facilities WHERE category IN (\'petrol\', \'ev_charging\', \'transport\')').get();
-  if (!countRow || countRow.c === 0) {
+  try {
     seedFacilities(db);
     console.log('Database seeded with complete facility dataset.');
+  } catch (err) {
+    console.warn('Seeding note:', err?.message);
   }
 
   console.log('Database initialized at', DB_PATH);

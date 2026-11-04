@@ -12,7 +12,7 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.kumi.systems/api/interpreter',
 ];
 
-// In-memory cache to prevent repeated network delays
+// In-memory & persistent cache to prevent repeated network delays
 const memCache = new Map();
 
 async function runOverpassQuery(query, cacheKey) {
@@ -21,7 +21,7 @@ async function runOverpassQuery(query, cacheKey) {
   }
   if (typeof window !== 'undefined' && cacheKey) {
     try {
-      const stored = sessionStorage.getItem(`overpass_${cacheKey}`);
+      const stored = localStorage.getItem(`overpass_${cacheKey}`) || sessionStorage.getItem(`overpass_${cacheKey}`);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -32,11 +32,10 @@ async function runOverpassQuery(query, cacheKey) {
     } catch {}
   }
 
-  let lastErr = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout
+      const timer = setTimeout(() => controller.abort(), 1200); // 1.2s fast non-blocking timeout
 
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -52,13 +51,13 @@ async function runOverpassQuery(query, cacheKey) {
         if (cacheKey) {
           memCache.set(cacheKey, data.elements);
           try {
-            sessionStorage.setItem(`overpass_${cacheKey}`, JSON.stringify(data.elements));
+            localStorage.setItem(`overpass_${cacheKey}`, JSON.stringify(data.elements));
           } catch {}
         }
         return data.elements;
       }
     } catch (e) {
-      lastErr = e;
+      // Non-blocking failover
     }
   }
   return [];

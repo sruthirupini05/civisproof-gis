@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Lock, User, ShieldAlert, KeyRound, CheckCircle2, UserPlus, ShieldCheck } from 'lucide-react';
-import { authenticateLogin, createOfficialCredentials } from '../services/auth.js';
+import { Lock, User, ShieldAlert, KeyRound, CheckCircle2, UserPlus, ShieldCheck, Key } from 'lucide-react';
+import { authenticateLogin, createOfficialCredentials, resetOfficialPassword, OFFICIAL_PASSKEY } from '../services/auth.js';
 import { useAuthStore, useLanguageStore } from '../store/useStore.js';
 
 export default function LoginPage() {
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const isTe = (currentLang || i18n.language || 'te').startsWith('te');
   const isHi = (currentLang || i18n.language || 'te').startsWith('hi');
 
-  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'create'
+  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'create' | 'reset'
   const [username, setUsername] = useState('inspector1');
   const [password, setPassword] = useState('inspect123');
   const [error, setError] = useState(location.state?.error || '');
@@ -27,6 +27,12 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newRole, setNewRole] = useState('inspector'); // 'admin' | 'inspector'
+  const [passkey, setPasskey] = useState(OFFICIAL_PASSKEY);
+
+  // Reset password form state
+  const [resetUser, setResetUser] = useState('');
+  const [resetPass, setResetPass] = useState('');
+  const [resetPasskey, setResetPasskey] = useState(OFFICIAL_PASSKEY);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -74,13 +80,13 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await createOfficialCredentials(newUsername, newPassword, newRole);
+      const res = await createOfficialCredentials(newUsername, newPassword, newRole, passkey);
       setSuccess(
         isTe
-          ? `అధికారిక ${newRole.toUpperCase()} ఆధారాలు డేటాబేస్‌లో విజయవంతంగా సృష్టించబడ్డాయి!`
+          ? `అధికారిక ${newRole.toUpperCase()} ఆధారాలు సురక్షితంగా హ్యాష్ చేయబడి డేటాబేస్‌లో సేవ్ చేయబడ్డాయి!`
           : isHi
-          ? `आधिकारिक ${newRole.toUpperCase()} क्रेडेंशियल डेटाबेस में सफलतापूर्वक सहेजे गए!`
-          : `Official ${newRole.toUpperCase()} credentials successfully saved in database!`
+          ? `आधिकारिक ${newRole.toUpperCase()} क्रेडेंशियल सुरक्षित रूप से सहेजे गए!`
+          : `Official ${newRole.toUpperCase()} credentials registered with secure password hashing!`
       );
       // Pre-fill login
       setUsername(newUsername);
@@ -93,18 +99,47 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResetPassword(e) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      await resetOfficialPassword(resetUser, resetPass, resetPasskey);
+      setSuccess(
+        isTe
+          ? 'పాస్‌వర్డ్ విజయవంతంగా రీసెట్ చేయబడింది! దయచేసి లాగిన్ అవ్వండి.'
+          : isHi
+          ? 'पासवर्ड सफलतापूर्वक रीसेट हो गया! कृपया लॉगिन करें।'
+          : 'Password successfully reset! You can now log in.'
+      );
+      setUsername(resetUser);
+      setPassword(resetPass);
+      setActiveTab('login');
+    } catch (err) {
+      setError(err.message || 'Failed to reset password.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-[#fffdf9]">
-      <div className="bg-white rounded-3xl shadow-xl border border-amber-200/80 p-6 sm:p-8 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-[#fffdf9] dark:bg-[#090d16] transition-colors">
+      <div className="bg-white dark:bg-stone-900 rounded-3xl shadow-xl border border-amber-200/80 dark:border-stone-800 p-6 sm:p-8 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
         {/* Emblem & Title */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-[#991b1b] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md text-white text-2xl border-2 border-amber-200">
-            🛕
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border-2 border-amber-300 p-1.5">
+            <img
+              src="/ap-govt-logo.svg"
+              alt="Government of Andhra Pradesh"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-xl font-black text-[#881337] tracking-tight">
+          <h1 className="text-xl font-black text-[#881337] dark:text-rose-400 tracking-tight">
             {isTe ? 'అధికారిక సిబ్బంది లాగిన్' : isHi ? 'आधिकारिक स्टाफ लॉगिन' : 'Authorized Staff Login'}
           </h1>
-          <p className="text-xs text-stone-500 mt-1">
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
             {isTe
               ? 'క్షేత్ర తనిఖీ సిబ్బంది మరియు అడ్మిన్ నిర్వాహకులకు మాత్రమే'
               : isHi
@@ -113,44 +148,55 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-[#fefaf3] p-1 rounded-2xl border border-amber-200/80 mb-5">
+        {/* Tab Switcher: Login | Register | Reset */}
+        <div className="grid grid-cols-3 bg-[#fefaf3] dark:bg-stone-800 p-1 rounded-2xl border border-amber-200/80 dark:border-stone-700 mb-5">
           <button
             type="button"
             onClick={() => { setActiveTab('login'); setError(''); setSuccess(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+            className={`py-2 text-[11px] sm:text-xs font-bold rounded-xl transition ${
               activeTab === 'login'
                 ? 'bg-[#991b1b] text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
             }`}
           >
-            {isTe ? 'లాగిన్ చేయండి' : isHi ? 'लॉगिन करें' : 'Official Login'}
+            {isTe ? 'లాగిన్' : isHi ? 'लॉगिन' : 'Login'}
           </button>
           <button
             type="button"
             onClick={() => { setActiveTab('create'); setError(''); setSuccess(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+            className={`py-2 text-[11px] sm:text-xs font-bold rounded-xl transition ${
               activeTab === 'create'
                 ? 'bg-[#991b1b] text-white shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
             }`}
           >
-            {isTe ? 'పాస్‌వర్డ్ సృష్టించండి' : isHi ? 'पासवर्ड बनाएं' : 'Set Credentials'}
+            {isTe ? 'ఖాతా నమోదు' : isHi ? 'पंजीकरण' : 'Register'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('reset'); setError(''); setSuccess(''); }}
+            className={`py-2 text-[11px] sm:text-xs font-bold rounded-xl transition ${
+              activeTab === 'reset'
+                ? 'bg-[#991b1b] text-white shadow-xs'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
+            }`}
+          >
+            {isTe ? 'రీసెట్' : isHi ? 'रीसेट' : 'Reset'}
           </button>
         </div>
 
         {/* Success Message */}
         {success && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs flex items-center gap-2">
-            <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+          <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+            <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{success}</span>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex items-center gap-2">
-            <ShieldAlert size={16} className="shrink-0 text-rose-600" />
+          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-2xl text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
+            <ShieldAlert size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
             <span>{error}</span>
           </div>
         )}
@@ -159,8 +205,8 @@ export default function LoginPage() {
         {activeTab === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                <User size={13} className="inline mr-1 text-[#991b1b]" />
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                <User size={13} className="inline mr-1 text-[#991b1b] dark:text-rose-400" />
                 {isTe ? 'వినియోగదారు పేరు (Username)' : isHi ? 'उपयोगकर्ता नाम' : 'Username'}
               </label>
               <input
@@ -168,14 +214,14 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. inspector1 or admin"
-                className="w-full bg-[#fefaf3] border border-amber-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3.5 py-2.5 text-sm text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white dark:focus:bg-stone-800 transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                <Lock size={13} className="inline mr-1 text-[#991b1b]" />
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                <Lock size={13} className="inline mr-1 text-[#991b1b] dark:text-rose-400" />
                 {isTe ? 'పాస్‌వర్డ్ (Password)' : isHi ? 'पासवर्ड' : 'Password'}
               </label>
               <input
@@ -183,7 +229,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#fefaf3] border border-amber-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3.5 py-2.5 text-sm text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white dark:focus:bg-stone-800 transition"
                 required
               />
             </div>
@@ -200,11 +246,31 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ── TAB 2: CREATE / SET CREDENTIALS ── */}
+        {/* ── TAB 2: CREATE / SET CREDENTIALS (PASSKEY PROTECTED) ── */}
         {activeTab === 'create' && (
-          <form onSubmit={handleCreateCredentials} className="space-y-3.5">
+          <form onSubmit={handleCreateCredentials} className="space-y-3">
+            {/* Department Passkey Security Notice */}
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-900 dark:text-amber-300">
+              <span className="font-bold">🔒 Official Security:</span> Authorized personnel only. Requires Department Passkey issued by RMC Pushkaram Control.
+            </div>
+
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                <Key size={13} className="inline mr-1 text-amber-600" />
+                Department Passkey
+              </label>
+              <input
+                type="text"
+                value={passkey}
+                onChange={(e) => setPasskey(e.target.value)}
+                placeholder="AP-RMC-PUSHKAR-2027"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-300 dark:border-stone-700 rounded-xl px-3.5 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                 {isTe ? 'హోదా / పాత్ర (Role)' : isHi ? 'भूमिका (Role)' : 'Official Role'}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -213,8 +279,8 @@ export default function LoginPage() {
                   onClick={() => setNewRole('inspector')}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                     newRole === 'inspector'
-                      ? 'bg-amber-100 text-[#991b1b] border-amber-300'
-                      : 'bg-stone-50 text-stone-600 border-stone-200'
+                      ? 'bg-amber-100 dark:bg-amber-950/40 text-[#991b1b] dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   <ShieldCheck size={14} />
@@ -225,8 +291,8 @@ export default function LoginPage() {
                   onClick={() => setNewRole('admin')}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                     newRole === 'admin'
-                      ? 'bg-amber-100 text-[#991b1b] border-amber-300'
-                      : 'bg-stone-50 text-stone-600 border-stone-200'
+                      ? 'bg-amber-100 dark:bg-amber-950/40 text-[#991b1b] dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   <KeyRound size={14} />
@@ -236,45 +302,104 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                 {isTe ? 'నూతన యూజర్‌నేమ్ (Username)' : isHi ? 'नया उपयोगकर्ता नाम' : 'New Username'}
               </label>
               <input
                 type="text"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="e.g. myinspector"
-                className="w-full bg-[#fefaf3] border border-amber-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
+                placeholder="e.g. ghat_inspector_3"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3.5 py-2 text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  Password (min 6)
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                  className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  Confirm
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                  className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-amber-500 to-[#991b1b] hover:opacity-95 text-white rounded-xl py-2.5 text-xs font-extrabold shadow-md active:scale-98 transition disabled:opacity-50 mt-1"
+            >
+              {loading
+                ? (isTe ? 'భద్రపరుస్తోంది…' : 'Saving Hashed Credentials…')
+                : (isTe ? 'అధికారిక ఖాతా సృష్టించండి' : 'Register Authorized Account')}
+            </button>
+          </form>
+        )}
+
+        {/* ── TAB 3: RESET PASSWORD ── */}
+        {activeTab === 'reset' && (
+          <form onSubmit={handleResetPassword} className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                Department Passkey
+              </label>
+              <input
+                type="text"
+                value={resetPasskey}
+                onChange={(e) => setResetPasskey(e.target.value)}
+                placeholder="AP-RMC-PUSHKAR-2027"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-300 dark:border-stone-700 rounded-xl px-3.5 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                {isTe ? 'నూతన పాస్‌వర్డ్ (New Password)' : isHi ? 'नया पासवर्ड' : 'New Password (min 6 chars)'}
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                Registered Username
               </label>
               <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••"
-                minLength={6}
-                className="w-full bg-[#fefaf3] border border-amber-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
+                type="text"
+                value={resetUser}
+                onChange={(e) => setResetUser(e.target.value)}
+                placeholder="e.g. inspector1"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3.5 py-2 text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                {isTe ? 'పాస్‌వర్డ్ నిర్ధారించండి' : isHi ? 'पासवर्ड की पुष्टि करें' : 'Confirm Password'}
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                New Password (min 6 chars)
               </label>
               <input
                 type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={resetPass}
+                onChange={(e) => setResetPass(e.target.value)}
                 placeholder="••••••••"
                 minLength={6}
-                className="w-full bg-[#fefaf3] border border-amber-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#991b1b] focus:bg-white transition"
+                className="w-full bg-[#fefaf3] dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-xl px-3.5 py-2 text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
                 required
               />
             </div>
@@ -282,20 +407,18 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-500 to-[#991b1b] hover:opacity-95 text-white rounded-xl py-2.5 text-xs font-extrabold shadow-md active:scale-98 transition disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-red-600 to-[#881337] hover:opacity-95 text-white rounded-xl py-2.5 text-xs font-extrabold shadow-md active:scale-98 transition disabled:opacity-50"
             >
-              {loading
-                ? (isTe ? 'డేటాబేస్‌లో భద్రపరుస్తోంది…' : isHi ? 'डेटाबेस में सहेज रहा है…' : 'Saving to Database…')
-                : (isTe ? 'డేటాబేస్‌లో సేవ్ చేయండి' : isHi ? 'डेटाबेस में सहेजें' : 'Save in Database & Register')}
+              {loading ? 'Resetting Password…' : 'Reset Official Password'}
             </button>
           </form>
         )}
 
         {/* Demo Quick Logins Helper */}
-        <div className="mt-5 p-3.5 bg-[#fefaf3] border border-amber-200/80 rounded-2xl text-xs text-stone-600">
-          <p className="font-bold text-stone-800 mb-1.5 flex items-center gap-1.5">
-            <KeyRound size={13} className="text-[#991b1b]" />
-            <span>{isTe ? 'డెమో ఖాతాలు:' : isHi ? 'डेमो खाते:' : 'Pre-configured Official Logins:'}</span>
+        <div className="mt-5 p-3.5 bg-[#fefaf3] dark:bg-stone-800/80 border border-amber-200/80 dark:border-stone-700 rounded-2xl text-xs text-stone-600 dark:text-stone-300">
+          <p className="font-bold text-stone-800 dark:text-stone-200 mb-1.5 flex items-center gap-1.5">
+            <KeyRound size={13} className="text-[#991b1b] dark:text-rose-400" />
+            <span>{isTe ? 'ధృవీకరించబడిన అధికారిక లాగిన్లు:' : isHi ? 'डेमो खाते:' : 'Authorized Official Credentials:'}</span>
           </p>
           <div className="space-y-1 font-mono text-[11px]">
             <button
@@ -305,7 +428,7 @@ export default function LoginPage() {
                 setPassword('inspect123');
                 setActiveTab('login');
               }}
-              className="w-full text-left hover:text-[#991b1b] hover:underline"
+              className="w-full text-left hover:text-[#991b1b] dark:hover:text-rose-400 hover:underline"
             >
               • inspector1 / inspect123 (Field Inspector)
             </button>
@@ -316,11 +439,14 @@ export default function LoginPage() {
                 setPassword('admin123');
                 setActiveTab('login');
               }}
-              className="w-full text-left hover:text-[#991b1b] hover:underline"
+              className="w-full text-left hover:text-[#991b1b] dark:hover:text-rose-400 hover:underline"
             >
-              • admin / admin123 (GIS & QR Admin)
+              • admin / admin123 (GIS & System Admin)
             </button>
           </div>
+          <p className="text-[10px] text-stone-400 mt-2">
+            Passkey for registration & reset: <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">AP-RMC-PUSHKAR-2027</span>
+          </p>
         </div>
       </div>
     </div>

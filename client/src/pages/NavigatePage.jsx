@@ -424,7 +424,12 @@ export default function NavigatePage() {
     setRouteLoading(true);
 
     try {
-      const modeKey = mode === 'car' || mode === 'driving' ? 'driving' : mode === 'walk' || mode === 'walking' ? 'walking' : 'driving';
+      const modeKey =
+        mode === 'walking' || mode === 'walk'
+          ? 'walking'
+          : mode === 'cycling' || mode === 'bike'
+          ? 'cycling'
+          : 'driving';
       const results = await calculateRoute(origin, destination, modeKey);
       const best = Array.isArray(results) ? results[0] : results;
 
@@ -896,6 +901,31 @@ export default function NavigatePage() {
           {/* Expanded Drawer Action List */}
           {drawerOpen ? (
             <div className="space-y-2.5 pt-3 animate-in fade-in duration-200">
+              {/* Switch Travel Mode On The Fly */}
+              <div className="flex items-center justify-around bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                {[
+                  { id: 'driving', icon: Car, label: 'Drive' },
+                  { id: 'walking', icon: Footprints, label: 'Walk' },
+                  { id: 'cycling', icon: Bike, label: 'Cycle' },
+                  { id: 'transit', icon: Train, label: 'Transit' },
+                ].map(({ id: mId, icon: Icon, label }) => (
+                  <button
+                    key={mId}
+                    type="button"
+                    onClick={() => {
+                      setMode(mId);
+                      showToast(`Switched mode to ${label}`);
+                    }}
+                    className={`flex-1 py-1.5 flex flex-col items-center gap-0.5 rounded-xl transition ${
+                      mode === mId ? 'bg-white/20 text-white shadow-xs font-bold' : 'text-stone-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span className="text-[9px] uppercase font-bold">{label}</span>
+                  </button>
+                ))}
+              </div>
+
               {/* Destination badge */}
               <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/5 border border-white/5">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">

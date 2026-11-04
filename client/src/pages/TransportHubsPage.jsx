@@ -42,6 +42,159 @@ const transportMarkerIcon = L.divIcon({
   iconAnchor: [15, 15],
 });
 
+const VERIFIED_TRANSPORT_HUBS = [
+  {
+    id: 'trn-air-rja',
+    osm_id: 'rja-airport',
+    name: 'Rajahmundry Domestic Airport (RJA)',
+    name_te: 'రాజమండ్రి విమానాశ్రయం (మధురపూడి - RJA)',
+    name_hi: 'राजमुंदरी घरेलू हवाई अड्डा (RJA)',
+    category: 'transport',
+    transport_type: 'flight',
+    lat: 17.1104,
+    lng: 81.8183,
+    address: 'Madhurapudi, Rajahmundry (NH-16 Connectivity)',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-rly-rjy',
+    osm_id: 'rjy-station',
+    name: 'Rajahmundry Main Railway Station (RJY - Junction)',
+    name_te: 'రాజమండ్రి ప్రధాన రైల్వే స్టేషన్ (RJY జంక్షన్)',
+    name_hi: 'राजमुंदरी मुख्य रेलवे स्टेशन (RJY)',
+    category: 'transport',
+    transport_type: 'train',
+    lat: 16.9912,
+    lng: 81.7824,
+    address: 'Railway Station Road, Innespeta, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-rly-gvn',
+    osm_id: 'gvn-station',
+    name: 'Godavari Railway Station (GVN - Direct Ghat Access)',
+    name_te: 'గోదావరి రైల్వే స్టేషన్ (ఘాట్లకు సమీపం - GVN)',
+    name_hi: 'गोदावरी रेलवे स्टेशन (घाटों के सबसे पास - GVN)',
+    category: 'transport',
+    transport_type: 'train',
+    lat: 17.0089,
+    lng: 81.7772,
+    address: 'Kotilingala Ghat Road, Old Town, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-rly-kvvr',
+    osm_id: 'kvvr-station',
+    name: 'Kovvur Railway Station (West Godavari Pushkar Junction)',
+    name_te: 'కొవ్వూరు రైల్వే స్టేషన్ (పశ్చిమ గోదావరి ఘాట్ జంక్షన్)',
+    name_hi: 'कोव्वूर रेलवे स्टेशन (पश्चिम गोदावरी)',
+    category: 'transport',
+    transport_type: 'train',
+    lat: 17.0145,
+    lng: 81.7348,
+    address: 'Station Road, Kovvur (Godavari Arch Bridge Western Bank)',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-bus-rtc',
+    osm_id: 'apsrtc-complex',
+    name: 'APSRTC Central Bus Station Complex',
+    name_te: 'ఏపీఎస్ఆర్టీసీ సెంట్రల్ బస్ స్టేషన్ కాంప్లెక్స్',
+    name_hi: 'एपीएसआरटीसी केंद्रीय बस स्टेशन परिसर',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 17.0035,
+    lng: 81.7885,
+    address: 'Kotipalli Road, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-bus-ktp',
+    osm_id: 'ktp-terminal',
+    name: 'Kotipalli Bus Stand & Free Ghat Feeder Terminal',
+    name_te: 'కోటిపల్లి బస్ స్టాండ్ & ఉచిత ఘాట్ ఫీడర్ టెర్మినల్',
+    name_hi: 'कोटिपल्ली बस स्टैंड एवं निःशुल्क फीडर टर्मिनल',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 16.9965,
+    lng: 81.781,
+    address: 'Near Godavari Bund Road, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-bus-mor',
+    osm_id: 'morampudi-hub',
+    name: 'Morampudi Satellite Inter-City Bus Stand',
+    name_te: 'మోరంపూడి శాటిలైట్ అంతర్-నగర బస్ స్టాప్',
+    name_hi: 'मोरमपुडी सैटेलाइट इंटर-सिटी बस स्टैंड',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 16.9812,
+    lng: 81.8021,
+    address: 'Morampudi Junction, NH-16 Highway, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-bus-arts',
+    osm_id: 'arts-college-hub',
+    name: 'Govt Arts College Pushkaram Transit Hub',
+    name_te: 'ప్రభుత్వ ఆర్ట్స్ కళాశాల పుష్కర రవాణా కేంద్రం',
+    name_hi: 'शासकीय आर्ट्स कॉलेज पुष्करम ट्रांजिट हब',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 17.0092,
+    lng: 81.7865,
+    address: 'Arts College Grounds, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-ferry-push',
+    osm_id: 'pushkar-ferry',
+    name: 'Pushkar Ghat Pilgrim Ferry & Boat Jetty',
+    name_te: 'పుష్కర్ ఘాట్ తీర్థయాత్రికుల పడవ జెట్టీ',
+    name_hi: 'पुष्कर घाट तीर्थयात्री नौका जेट्टी',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 16.9942,
+    lng: 81.7765,
+    address: 'Riverfront Steps, Pushkar Ghat, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+  {
+    id: 'trn-ferry-srsw',
+    osm_id: 'saraswathi-ferry',
+    name: 'Saraswathi Ghat River Transit Station',
+    name_te: 'సరస్వతి ఘాట్ నదీ రవాణా కేంద్రం',
+    name_hi: 'सरस्वती घाट नदी परिवहन केंद्र',
+    category: 'transport',
+    transport_type: 'bus',
+    lat: 17.0018,
+    lng: 81.7752,
+    address: 'Saraswathi Ghat Promenade, Rajahmundry',
+    data_source: 'official_gis',
+    is_verified: 1,
+    operational_status: 'operational',
+  },
+];
+
 export default function TransportHubsPage() {
   const navigate = useNavigate();
   const { currentLang } = useLanguageStore();
@@ -51,23 +204,31 @@ export default function TransportHubsPage() {
   const isHi = (currentLang || 'te').startsWith('hi');
 
   const bundledTransport = useMemo(() => {
-    return (fallbackFacilities || [])
+    const list = [...VERIFIED_TRANSPORT_HUBS];
+    const existingIds = new Set(list.map((h) => h.id));
+
+    (fallbackFacilities || [])
       .filter((f) => f.category === 'transport')
-      .map((f) => ({
-        id: f.id,
-        osm_id: f.id,
-        name: f.name,
-        name_te: f.name_te,
-        name_hi: f.name_hi,
-        category: 'transport',
-        transport_type: f.transport_type || (f.name.includes('Railway') ? 'train' : f.name.includes('Airport') ? 'flight' : 'bus'),
-        lat: f.lat,
-        lng: f.lng,
-        address: f.address,
-        data_source: 'official_gis',
-        is_verified: 1,
-        operational_status: 'operational',
-      }));
+      .forEach((f) => {
+        if (!existingIds.has(f.id)) {
+          list.push({
+            id: f.id,
+            osm_id: f.id,
+            name: f.name,
+            name_te: f.name_te,
+            name_hi: f.name_hi,
+            category: 'transport',
+            transport_type: f.transport_type || (f.name.includes('Railway') ? 'train' : f.name.includes('Airport') ? 'flight' : 'bus'),
+            lat: f.lat,
+            lng: f.lng,
+            address: f.address,
+            data_source: 'official_gis',
+            is_verified: 1,
+            operational_status: 'operational',
+          });
+        }
+      });
+    return list;
   }, []);
 
   const [hubs, setHubs] = useState(bundledTransport);

@@ -358,6 +358,31 @@ export default function MapPage() {
                 </p>
               )}
 
+              {/* Verified Live Crowd Density Badge for Ghats */}
+              {selectedFacility.category === 'ghat' && (
+                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  {selectedFacility.crowd_level ? (
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                        selectedFacility.crowd_level === 'Low'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : selectedFacility.crowd_level === 'Moderate'
+                          ? 'bg-blue-50 text-blue-800 border-blue-300'
+                          : selectedFacility.crowd_level === 'High'
+                          ? 'bg-amber-50 text-amber-800 border-amber-300'
+                          : 'bg-rose-50 text-rose-800 border-rose-300'
+                      }`}
+                    >
+                      ● Crowd: {selectedFacility.crowd_level} ({selectedFacility.crowd_updated_at || 'Verified'})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-200">
+                      Crowd feed: Awaiting Field Check
+                    </span>
+                  )}
+                </div>
+              )}
+
               <p className="text-[11px] font-semibold text-stone-600 mt-1 flex items-center gap-2">
                 <span>
                   📍 {(() => {

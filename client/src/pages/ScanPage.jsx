@@ -5,6 +5,8 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { QrCode, Keyboard, Search, Sparkles, AlertCircle } from 'lucide-react';
 import { facilitiesAPI } from '../services/api.js';
 import { getCachedFacilities } from '../services/db.js';
+import fallbackFacilities from '../data/fallbackFacilities.json';
+import PushkaramWelcomeScreen from '../components/UI/PushkaramWelcomeScreen.jsx';
 
 export default function ScanPage() {
   const { t } = useTranslation();
@@ -13,6 +15,8 @@ export default function ScanPage() {
   const [error, setError] = useState('');
   const [demoFacilities, setDemoFacilities] = useState([]);
   const [cameraActive, setCameraActive] = useState(true);
+  const [scannedToken, setScannedToken] = useState(null);
+  const [showWelcome, setShowWelcome] = useState(false);
   const scannerRef = useRef(null);
 
   useEffect(() => {
@@ -21,11 +25,22 @@ export default function ScanPage() {
       try {
         let list = [];
         if (navigator.onLine) {
-          list = await facilitiesAPI.list({});
-        } else {
-          list = await getCachedFacilities();
+          try {
+            const res = await facilitiesAPI.list({});
+            if (Array.isArray(res)) list = res;
+            else if (Array.isArray(res?.facilities)) list = res.facilities;
+          } catch {}
         }
-        setDemoFacilities(list.slice(0, 5));
+        if (!list.length) {
+          try {
+            const cached = await getCachedFacilities();
+            if (Array.isArray(cached) && cached.length) list = cached;
+          } catch {}
+        }
+        if (!list.length) {
+          list = fallbackFacilities || [];
+        }
+        setDemoFacilities(list.slice(0, 6));
       } catch (e) {
         console.error('Failed to load demo list:', e);
       }
@@ -51,23 +66,26 @@ export default function ScanPage() {
             scannerInstance.clear();
           } catch {}
           let raw = decodedText.trim();
+          let extractedToken = raw;
           if (raw.includes('/facility/')) {
             const parts = raw.split('/facility/');
-            const token = parts[parts.length - 1].split('?')[0];
-            navigate(`/facility/${token}`);
+            extractedToken = parts[parts.length - 1].split('?')[0];
           } else if (raw.startsWith('http://') || raw.startsWith('https://')) {
             try {
               const url = new URL(raw);
-              navigate(url.pathname || '/');
+              const pathParts = url.pathname.split('/');
+              extractedToken = pathParts[pathParts.length - 1] || 'WHKsjhLgHFX2';
             } catch {
-              navigate('/');
+              extractedToken = raw;
             }
-          } else {
-            navigate(`/facility/${raw}`);
           }
+
+          // Trigger dedicated Pushkaralu Welcome Screen before continuing
+          setScannedToken(extractedToken);
+          setShowWelcome(true);
         },
-        (scanError) => {
-          // Continuous scanning errors are expected when no QR is in frame
+        () => {
+          // Continuous scanning ticks
         }
       );
       scannerRef.current = scannerInstance;
@@ -83,7 +101,7 @@ export default function ScanPage() {
         } catch {}
       }
     };
-  }, [navigate]);
+  }, []);
 
   function handleManualSubmit(e) {
     e.preventDefault();
@@ -96,36 +114,64 @@ export default function ScanPage() {
       const parts = code.split('/facility/');
       code = parts[parts.length - 1].split('?')[0];
     }
-    navigate(`/facility/${encodeURIComponent(code)}`);
+    setScannedToken(code);
+    setShowWelcome(true);
+  }
+
+  // If scan succeeded, render dedicated Pushkaralu Welcome Screen (Matching Image 3)
+  if (showWelcome) {
+    return (
+      <PushkaramWelcomeScreen
+        scannedToken={scannedToken}
+        onContinue={() => {
+          if (scannedToken) {
+            navigate(`/facility/${encodeURIComponent(scannedToken)}`);
+          } else {
+            navigate('/');
+          }
+        }}
+      />
+    );
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-6 space-y-5">
-      <div className="text-center sm:text-left">
-        <h1 className="text-xl font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-2">
-          <QrCode className="text-[#1e3a5f]" size={24} />
-          <span>{t('qr.scanTitle')}</span>
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">{t('qr.scanInstructions')}</p>
+    <div className="max-w-xl mx-auto px-4 py-6 space-y-6 pb-24">
+      {/* Header */}
+      <div className="text-center space-y-1">
+        <div className="inline-flex p-3 bg-amber-100 rounded-full text-[#991b1b] mb-1">
+          <QrCode size={28} />
+        </div>
+        <h1 className="text-xl font-bold text-slate-800">{t('scan.title')}</h1>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">{t('scan.instruction')}</p>
       </div>
 
-      {/* QR Camera Reader */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-3">
-        <div id="qr-reader-container" className="rounded-xl overflow-hidden" />
-        {!cameraActive && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
-            <AlertCircle size={16} className="shrink-0" />
-            <span>{t('qr.cameraError')}</span>
-          </div>
-        )}
+      {/* Camera Box */}
+      <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-200">
+        <div
+          id="qr-reader-container"
+          className="rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center bg-slate-50 border border-dashed border-slate-300"
+        >
+          {!cameraActive && (
+            <div className="text-center p-6 space-y-2">
+              <AlertCircle className="mx-auto text-amber-500" size={32} />
+              <p className="text-xs text-slate-600 font-medium">
+                Camera permission needed or not available.
+              </p>
+              <p className="text-[11px] text-slate-400">
+                You can enter the facility token below or click a sample code.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Manual Entry Fallback */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-          <Keyboard size={15} />
-          <span>{t('qr.manualEntry')}</span>
-        </h2>
+      {/* Manual Code Input Form */}
+      <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <Keyboard size={16} />
+          <span>{t('scan.manualEntry')}</span>
+        </div>
+
         <form onSubmit={handleManualSubmit} className="flex gap-2">
           <input
             type="text"
@@ -134,41 +180,43 @@ export default function ScanPage() {
               setManualCode(e.target.value);
               setError('');
             }}
-            placeholder={t('qr.manualPlaceholder')}
-            className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+            placeholder="e.g. WHKsjhLgHFX2, FOD-SAI-ANNADAN"
+            className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#991b1b]"
           />
           <button
             type="submit"
-            className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-[#15294a] transition flex items-center gap-1 shadow-sm shrink-0"
+            className="bg-[#991b1b] hover:bg-[#881337] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95"
           >
             <Search size={14} />
-            <span>{t('qr.manualSubmit')}</span>
+            <span>Open</span>
           </button>
         </form>
-        {error && <p className="text-rose-600 text-xs font-medium">{error}</p>}
+
+        {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
       </div>
 
-      {/* Demo Facilities Quick Picker */}
-      {demoFacilities.length > 0 && (
-        <div className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200 space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <Sparkles size={14} className="text-amber-500" />
-            <span>Quick Test Tokens (Offline & Demo):</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {demoFacilities.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => navigate(`/facility/${f.qr_token}`)}
-                className="text-[11px] bg-white border border-slate-200 hover:border-[#1e3a5f] px-2.5 py-1.5 rounded-lg text-slate-700 hover:text-[#1e3a5f] font-medium transition text-left"
-              >
-                {f.name} <span className="font-mono text-slate-400">({f.qr_token})</span>
-              </button>
-            ))}
-          </div>
+      {/* Quick Test Codes */}
+      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+          <Sparkles size={14} className="text-amber-500" />
+          <span>Simulate QR Scan (Tap to Test Welcome Flow):</span>
         </div>
-      )}
+        <div className="grid grid-cols-2 gap-2">
+          {demoFacilities.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => {
+                setScannedToken(f.qr_token || f.id);
+                setShowWelcome(true);
+              }}
+              className="text-left p-2.5 bg-white border border-slate-200 rounded-xl hover:border-[#991b1b] transition text-xs shadow-2xs active:scale-98"
+            >
+              <div className="font-mono text-[10px] text-amber-700 font-bold">{f.qr_token || f.id}</div>
+              <div className="font-semibold text-slate-800 truncate">{f.name}</div>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

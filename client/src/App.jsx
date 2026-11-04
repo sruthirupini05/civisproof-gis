@@ -29,6 +29,7 @@ const NearbyFoodPage = lazy(() => import('./pages/NearbyFoodPage.jsx'));
 const AccommodationsPage = lazy(() => import('./pages/AccommodationsPage.jsx'));
 const PetrolStationsPage = lazy(() => import('./pages/PetrolStationsPage.jsx'));
 const TransportHubsPage = lazy(() => import('./pages/TransportHubsPage.jsx'));
+const EventsPage = lazy(() => import('./pages/EventsPage.jsx'));
 
 export default function App() {
   const { mode, setMode, refreshSystemTheme } = useThemeStore();
@@ -86,6 +87,8 @@ export default function App() {
             {/* Public Pilgrim Routes */}
             <Route index element={<HomePage />} />
             <Route path="map" element={<MapPage />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="alerts" element={<MoreServicesPage />} />
             <Route path="explore" element={<ExplorePage />} />
             <Route path="explore/:id" element={<DestinationDetailPage />} />
             <Route path="services/:type" element={<MoreServicesPage />} />
@@ -100,6 +103,8 @@ export default function App() {
             <Route path="saved" element={<HelpPage />} />
             <Route path="scan" element={<ScanPage />} />
             <Route path="city-qr" element={<CityQRPage />} />
+            <Route path="qr-labels" element={<QRAdminPage />} />
+            <Route path="qr" element={<QRAdminPage />} />
             <Route path="login" element={<LoginPage />} />
 
             {/* Protected Authorized Field Staff & Inspector Routes (Normal users restricted) */}
@@ -135,14 +140,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="admin/qr"
-              element={
-                <ProtectedRoute allowedRoles={['admin', 'inspector']}>
-                  <QRAdminPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="admin/qr" element={<QRAdminPage />} />
           </Route>
         </Routes>
       </Suspense>

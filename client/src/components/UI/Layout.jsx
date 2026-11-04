@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer, Sun, Moon, Compass } from 'lucide-react';
+import { Home, Map, QrCode, Heart, HelpCircle, LogIn, LogOut, Printer, Sun, Moon, Compass, Calendar } from 'lucide-react';
 import { useAuthStore, useLanguageStore, useThemeStore } from '../../store/useStore.js';
 import LanguageSelector from './LanguageSelector.jsx';
 
@@ -20,10 +20,14 @@ export default function Layout() {
       {/* ── Sacred Pushkaram Header ── */}
       <header className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] text-white shadow-md sticky top-0 z-40 border-b border-amber-500/20">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          {/* Logo & Pushkaram Crest */}
+          {/* Official AP Govt Logo & Pushkaram Title */}
           <NavLink to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-amber-300 to-amber-500 rounded-2xl flex items-center justify-center font-black text-[#881337] text-lg shadow-md border border-amber-200 group-hover:scale-105 transition">
-              🛕
+            <div className="w-10 h-10 rounded-full bg-white p-1 shadow-md border border-amber-300/80 group-hover:scale-105 transition flex items-center justify-center shrink-0">
+              <img
+                src="/ap-govt-logo.svg"
+                alt="Government of Andhra Pradesh"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="font-extrabold text-sm md:text-base leading-tight tracking-tight text-white flex items-center gap-1.5">
@@ -60,6 +64,17 @@ export default function Layout() {
             >
               <Map size={13} />
               <span>{isTe ? 'సౌకర్యాలు' : isHi ? 'सुविधाएं' : 'Find Facilities'}</span>
+            </NavLink>
+            <NavLink
+              to="/events"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  isActive ? 'bg-white text-[#7f1d1d] shadow-xs' : 'text-amber-100 hover:text-white'
+                }`
+              }
+            >
+              <Calendar size={13} />
+              <span>{isTe ? 'కార్యక్రమాలు' : isHi ? 'कार्यक्रम' : 'Events'}</span>
             </NavLink>
             <NavLink
               to="/explore"
@@ -114,16 +129,14 @@ export default function Layout() {
               </span>
             </NavLink>
 
-            {user?.role === 'admin' && (
-              <NavLink
-                to="/admin/qr"
-                title="Print QR Codes"
-                className="hidden md:flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
-              >
-                <Printer size={13} />
-                <span>QR Labels</span>
-              </NavLink>
-            )}
+            <NavLink
+              to="/qr-labels"
+              title="Print QR Codes"
+              className="hidden md:flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl transition"
+            >
+              <Printer size={13} />
+              <span>QR Labels</span>
+            </NavLink>
 
             {user ? (
               <div className="flex items-center gap-2">
@@ -170,9 +183,9 @@ export default function Layout() {
         {[
           { to: '/', icon: Home, label: isTe ? 'హోమ్' : isHi ? 'होम' : 'Home' },
           { to: '/map', icon: Map, label: isTe ? 'సౌకర్యాలు' : isHi ? 'सुविधाएं' : 'Facilities' },
+          { to: '/events', icon: Calendar, label: isTe ? 'కార్యక్రమాలు' : isHi ? 'कार्यक्रम' : 'Events' },
           { to: '/explore', icon: Compass, label: isTe ? 'అన్వేషణ' : isHi ? 'अन्वेषण' : 'Explore' },
           { to: '/scan', icon: QrCode, label: isTe ? 'స్కాన్' : isHi ? 'स्कैन' : 'Scan' },
-          { to: '/help', icon: HelpCircle, label: isTe ? 'సహాయం' : isHi ? 'मदद' : 'Help' },
         ].map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
